@@ -1,0 +1,36 @@
+plugins {
+    id 'java'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+version '1.0.0'
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+dependencies {
+    compileOnly 'net.portswigger.burp.extensions:montoya-api:2023.5'
+    implementation 'com.webauthn4j:webauthn4j-core:0.28.3.RELEASE'
+    implementation 'com.google.code.gson:gson:2.11.0'
+    implementation 'com.intellij:forms_rt:7.0.3'
+}
+
+shadowJar {
+    archiveBaseName.set('Passkey-Raider')  // Set the JAR file name
+    archiveClassifier.set('')  // No classifier (e.g., no "-all" suffix)
+    //archiveVersion.set('')  // Remove version from file name
+
+    manifest {
+        attributes(
+                'Main-Class': 'burp.PasskeyEditorExtension'
+        )
+    }
+    //duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+tasks.build {
+    dependsOn shadowJar  // Ensure shadowJar runs when you run the build task
+}
+
