@@ -63,6 +63,7 @@ public class SettingForm {
 	public String authenticationRegexSignature = "\"signature\":\"([^\"]+)";
 	public String coseKeyJsonString;
 	public COSEKey coseKey;
+	Map<String, Object> coseKeyJson;
 	String algorithm = "";
 
 	SettingForm(MontoyaApi api) {
@@ -81,23 +82,19 @@ public class SettingForm {
 		authenticationRegexAuthenticatorData = settingData.getString("authenticationAuthenticatorData") != null ? settingData.getString("authenticationAuthenticatorData") : authenticationRegexAuthenticatorData;
 		authenticationRegexSignature = settingData.getString("authenticationSignature") != null ? settingData.getString("authenticationSignature") : authenticationRegexSignature;
 
-		try {
-			coseKeyJsonString = settingData.getString("coseKeyJsonString") != null ? settingData.getString("coseKeyJsonString") : generateCOSEKey();
+		coseKeyJsonString = settingData.getString("coseKeyJsonString") != null ? settingData.getString("coseKeyJsonString") : generateCOSEKey();
 
-			Map<String, Object> coseKeyJson = gsonPrettyPrinting.fromJson(coseKeyJsonString, mapType);
-			coseKey = util.COSEKeyJsonToObject(coseKeyJson);
-			switch ((String) coseKeyJson.get("algorithm")) {
-				case "ES256" -> ES256RadioButton.setSelected(true);
-				case "RS1" -> RS1RadioButton.setSelected(true);
-				case "EdDSA" -> edDSARadioButton.setSelected(true);
-				case "RS384" -> RS384RadioButton.setSelected(true);
-				case "RS512" -> RS512RadioButton.setSelected(true);
-				case "ES384" -> ES384RadioButton.setSelected(true);
-				case "ES512" -> ES512RadioButton.setSelected(true);
-				default -> RS256RadioButton.setSelected(true);
-			}
-		} catch (NoSuchAlgorithmException ex) {
-			throw new RuntimeException(ex);
+		coseKeyJson = gsonPrettyPrinting.fromJson(coseKeyJsonString, mapType);
+		coseKey = util.COSEKeyJsonToObject(coseKeyJson);
+		switch ((String) coseKeyJson.get("algorithm")) {
+			case "ES256" -> ES256RadioButton.setSelected(true);
+			case "RS1" -> RS1RadioButton.setSelected(true);
+			case "EdDSA" -> edDSARadioButton.setSelected(true);
+			case "RS384" -> RS384RadioButton.setSelected(true);
+			case "RS512" -> RS512RadioButton.setSelected(true);
+			case "ES384" -> ES384RadioButton.setSelected(true);
+			case "ES512" -> ES512RadioButton.setSelected(true);
+			default -> RS256RadioButton.setSelected(true);
 		}
 
 		printSetting(true);
@@ -113,11 +110,7 @@ public class SettingForm {
 
 		coseKeyField.setText(coseKeyJsonString);
 		generateButton.addActionListener(e -> {
-			try {
-				coseKeyField.setText(generateCOSEKey());
-			} catch (NoSuchAlgorithmException ex) {
-				throw new RuntimeException(ex);
-			}
+			coseKeyField.setText(generateCOSEKey());
 		});
 
 		saveButton.addActionListener(e -> {
@@ -129,7 +122,7 @@ public class SettingForm {
 			authenticationRegexAuthenticatorData = authenticationAuthenticatorDataField.getText().trim();
 			authenticationRegexSignature = authenticationSignatureField.getText().trim();
 			coseKeyJsonString = coseKeyField.getText();
-			Map<String, Object> coseKeyJson = gsonPrettyPrinting.fromJson(coseKeyJsonString, mapType);
+			coseKeyJson = gsonPrettyPrinting.fromJson(coseKeyJsonString, mapType);
 			coseKey = util.COSEKeyJsonToObject(coseKeyJson);
 
 			settingData.setString("registrationURL", registrationURL);
