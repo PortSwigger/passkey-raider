@@ -1,25 +1,20 @@
-/*
- * Copyright (c) 2023. PortSwigger Ltd. All rights reserved.
- *
- * This code may be used to extend the functionality of Burp Suite Community Edition
- * and Burp Suite Professional, provided that this usage does not violate the
- * license terms for those products.
- */
-
 package burp;
-
 
 import burp.api.montoya.MontoyaApi;
 import burp.api.montoya.proxy.http.InterceptedRequest;
 import burp.api.montoya.proxy.http.ProxyRequestHandler;
 import burp.api.montoya.proxy.http.ProxyRequestReceivedAction;
 import burp.api.montoya.proxy.http.ProxyRequestToBeSentAction;
+import burp.api.montoya.utilities.Base64Utils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
 import com.google.gson.reflect.TypeToken;
+import com.webauthn4j.util.Base64UrlUtil;
+import com.webauthn4j.util.MessageDigestUtil;
 
 import java.lang.reflect.Type;
+import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -31,7 +26,8 @@ class MyProxyHttpRequestHandler implements ProxyRequestHandler {
 	private final SettingForm settingForm;
 	private final MontoyaApi api;
 	private final Util util;
-	Gson gsonPrettyPrinting;
+	private final Gson gsonPrettyPrinting;
+	private final Base64Utils base64Utils;
 
 	MyProxyHttpRequestHandler(SettingForm settingForm, MontoyaApi api)
 	{
@@ -39,78 +35,87 @@ class MyProxyHttpRequestHandler implements ProxyRequestHandler {
 		this.api = api;
 		this.util = new Util(api);
 		gsonPrettyPrinting = new GsonBuilder().setPrettyPrinting().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
+		base64Utils = api.utilities().base64Utils();
 	}
 
 	@Override
 	public ProxyRequestReceivedAction handleRequestReceived(InterceptedRequest interceptedRequest) {
-		//Drop all post requests
-        /*if (interceptedRequest.method().equals("POST")) {
-            return ProxyRequestReceivedAction.drop();
-        }*/
+		try {
+			if (interceptedRequest.url().equalsIgnoreCase(settingForm.registrationURL)) {
+				/*
+				- decode
+				- change pub key
+				- encode
+				*/
+				String requestBody = interceptedRequest.bodyToString();
 
+				Pattern patternAttestationObject = Pattern.compile(settingForm.registrationRegexAttestationObject);
+				Matcher matcherAttestationObject = patternAttestationObject.matcher(requestBody);
 
+				if (matcherAttestationObject.find()) {
+					String attestationObjectValue = matcherAttestationObject.group(1);
 
-        /*if (interceptedRequest.url().equalsIgnoreCase(settingForm.registrationURL) || interceptedRequest.url().equalsIgnoreCase(settingForm.authenticationURL)) {
-            return ProxyRequestReceivedAction.continueWith(interceptedRequest, interceptedRequest.annotations().withHighlightColor(BLUE));
-        }*/
+					Map<String, Object> attestationObject = util.decodeAttestationObject(attestationObjectValue);
 
+					Type mapType = new TypeToken<Map<String, Object>>() {}.getType();
+					Map<String, Object> coseKey = gsonPrettyPrinting.fromJson(settingForm.coseKeyJsonString, mapType);
 
-		if (interceptedRequest.url().equalsIgnoreCase(settingForm.registrationURL)) {
-            /*
-            - decode
-            - change pub key
-            - encode
-            */
-			String requestBody = interceptedRequest.bodyToString();
+					((Map<String, Object>) ((Map<String, Object>) attestationObject.get("authenticatorData")).get("attestedCredentialData")).put("coseKey", coseKey);
 
-			Pattern patternAttestationObject = Pattern.compile(settingForm.registrationRegexAttestationObject);
-			Matcher matcherAttestationObject = patternAttestationObject.matcher(requestBody);
+					String modifiedAttestationObjectB64 = util.encodeAttestationObject(attestationObject);
+					requestBody = requestBody.replaceAll(attestationObjectValue, modifiedAttestationObjectB64);
 
-			if (matcherAttestationObject.find()) {
-				String attestationObjectValue = matcherAttestationObject.group(1);
-				api.logging().logToOutput("\n============= " + settingForm.registrationURL + " =============");
-				api.logging().logToOutput("attestationObjectValue: " + attestationObjectValue);
-
-				Map<String, Object> attestationObject = util.decodeAttestationObject(attestationObjectValue);
-
-				Type mapType = new TypeToken<Map<String, Object>>() {}.getType();
-				Map<String, Object> coseKey = gsonPrettyPrinting.fromJson(settingForm.coseKeyJsonString, mapType);
-
-				((Map<String, Object>) ((Map<String, Object>) attestationObject.get("authenticatorData")).get("attestedCredentialData")).put("coseKey", coseKey);
-
-				String modifiedAttestationObjectB64 = util.encodeAttestationObject(attestationObject);
-				requestBody = requestBody.replaceAll(attestationObjectValue, modifiedAttestationObjectB64);
-
-
-                /*Map<String, Object> authenticatorDataMap = (Map<String, Object>) attestationObject.get("authenticatorData");
-                Map<String, Object> attestedCredentialDataMap = (Map<String, Object>) authenticatorDataMap.get("attestedCredentialData");
-                Map<String, Object> coseKeyMap = (Map<String, Object>) attestedCredentialDataMap.get("coseKey");*/
-
-				return ProxyRequestReceivedAction.continueWith(interceptedRequest.withBody(requestBody), interceptedRequest.annotations().withHighlightColor(BLUE));
+					return ProxyRequestReceivedAction.continueWith(interceptedRequest.withBody(requestBody), interceptedRequest.annotations().withHighlightColor(BLUE));
+				}
+			} else if (interceptedRequest.url().equalsIgnoreCase(settingForm.authenticationURL)) {
+				return ProxyRequestReceivedAction.continueWith(interceptedRequest, interceptedRequest.annotations().withHighlightColor(BLUE));
 			}
-		} else if (interceptedRequest.url().equalsIgnoreCase(settingForm.authenticationURL)) {
-			return ProxyRequestReceivedAction.continueWith(interceptedRequest, interceptedRequest.annotations().withHighlightColor(BLUE));
+		} catch (Exception e) {
+			api.logging().logToOutput("Error handleRequestReceived: " + e.getMessage());
+			for (StackTraceElement element : e.getStackTrace()) {
+				api.logging().logToOutput("\tat " + element);
+			}
 		}
-
-
-
-		//If the content type is json, highlight the request and follow burp rules for interception
-        /*if (interceptedRequest.contentType() == JSON) {
-            return ProxyRequestReceivedAction.continueWith(interceptedRequest, interceptedRequest.annotations().withHighlightColor(RED));
-        }*/
-
-		//Intercept all other requests
-		//return ProxyRequestReceivedAction.intercept(interceptedRequest);
-
 		return ProxyRequestReceivedAction.continueWith(interceptedRequest);
-
 	}
 
 	@Override
 	public ProxyRequestToBeSentAction handleRequestToBeSent(InterceptedRequest interceptedRequest) {
-		//Do nothing with the user modified request, continue as normal.
-		api.logging().logToOutput("\n============= handleRequestToBeSent =============");
+		try {
+			if (interceptedRequest.url().equalsIgnoreCase(settingForm.authenticationURL)) {
+				String requestBody = interceptedRequest.bodyToString();
 
+				Pattern patternClientDataJSON = Pattern.compile(settingForm.authenticationRegexClientDataJSON);
+				Matcher matcherClientDataJSON = patternClientDataJSON.matcher(requestBody);
+
+				Pattern patternAuthenticatorData = Pattern.compile(settingForm.authenticationRegexAuthenticatorData);
+				Matcher matcherAuthenticatorData = patternAuthenticatorData.matcher(requestBody);
+
+				Pattern patternSignature = Pattern.compile(settingForm.authenticationRegexSignature);
+				Matcher matcherSignature = patternSignature.matcher(requestBody);
+
+				if (matcherClientDataJSON.find() && matcherAuthenticatorData.find() && matcherSignature.find()) {
+					String clientDataJSONValue = matcherClientDataJSON.group(1);
+					String authenticatorDataValue = matcherAuthenticatorData.group(1);
+					String signatureValue = matcherSignature.group(1);
+
+					// sign
+					byte[] clientDataJSONBytes = Base64UrlUtil.decode(clientDataJSONValue);
+					byte[] clientDataHash = MessageDigestUtil.createSHA256().digest(clientDataJSONBytes);
+					byte[] authenticatorDataBytes = base64Utils.decode(authenticatorDataValue).getBytes();
+					byte[] data = ByteBuffer.allocate(authenticatorDataBytes.length + clientDataHash.length).put(authenticatorDataBytes).put(clientDataHash).array();
+					String modifiedSignature = util.calculateSignature(settingForm.coseKey, data);
+
+					requestBody = requestBody.replaceAll(signatureValue, modifiedSignature);
+					return ProxyRequestToBeSentAction.continueWith(interceptedRequest.withBody(requestBody));
+				}
+			}
+		} catch (Exception e) {
+			api.logging().logToOutput("Error handleRequestToBeSent: " + e.getMessage());
+			for (StackTraceElement element : e.getStackTrace()) {
+				api.logging().logToOutput("\tat " + element);
+			}
+		}
 		return ProxyRequestToBeSentAction.continueWith(interceptedRequest);
 	}
 }

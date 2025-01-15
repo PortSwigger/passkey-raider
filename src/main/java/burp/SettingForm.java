@@ -34,10 +34,6 @@ public class SettingForm {
 	private JTextField authenticationUrlField;
 	private JPanel coseKeyPanel;
 	private JTextArea coseKeyField;
-	private JPanel keyTypePanel;
-	private JRadioButton RSARadioButton;
-	private JRadioButton EC2RadioButton;
-	private JRadioButton OKPRadioButton;
 	private JPanel algorithmPanel;
 	private JRadioButton RS256RadioButton;
 	private JRadioButton ES256RadioButton;
@@ -55,7 +51,7 @@ public class SettingForm {
 	Gson gsonPrettyPrinting;
 	Type mapType;
 
-	private PersistedObject settingData;
+	private final PersistedObject settingData;
 
 	public String registrationURL = "";
 	public String registrationRegexClientDataJSON = "\"clientDataJSON\":\"([^\"]+)";
@@ -65,11 +61,8 @@ public class SettingForm {
 	public String authenticationRegexClientDataJSON = "\"clientDataJSON\":\"([^\"]+)";
 	public String authenticationRegexAuthenticatorData = "\"authenticatorData\":\"([^\"]+)";
 	public String authenticationRegexSignature = "\"signature\":\"([^\"]+)";
-	public String coseKeyJsonString = "";
-	public COSEKey coseKey = null;
-
-
-	String keyType = "";
+	public String coseKeyJsonString;
+	public COSEKey coseKey;
 	String algorithm = "";
 
 	SettingForm(MontoyaApi api) {
@@ -93,15 +86,6 @@ public class SettingForm {
 
 			Map<String, Object> coseKeyJson = gsonPrettyPrinting.fromJson(coseKeyJsonString, mapType);
 			coseKey = util.COSEKeyJsonToObject(coseKeyJson);
-			switch ((String) coseKeyJson.get("keyType")) {
-				case "RSA" -> RSARadioButton.setSelected(true);
-				case "EC2" -> EC2RadioButton.setSelected(true);
-				default -> {
-					OKPRadioButton.setSelected(true);
-					enableAlgorithms(false);
-					edDSARadioButton.setSelected(true);
-				}
-			}
 			switch ((String) coseKeyJson.get("algorithm")) {
 				case "ES256" -> ES256RadioButton.setSelected(true);
 				case "RS1" -> RS1RadioButton.setSelected(true);
@@ -128,23 +112,6 @@ public class SettingForm {
 		authenticationSignatureField.setText(authenticationRegexSignature);
 
 		coseKeyField.setText(coseKeyJsonString);
-		RSARadioButton.addActionListener(e -> {
-			if (RSARadioButton.isSelected()) {
-				enableAlgorithms(true);
-			}
-		});
-		EC2RadioButton.addActionListener(e -> {
-			if (EC2RadioButton.isSelected()) {
-				enableAlgorithms(true);
-			}
-		});
-		OKPRadioButton.addActionListener(e -> {
-			if (OKPRadioButton.isSelected()) {
-				enableAlgorithms(false);
-				edDSARadioButton.setSelected(true);
-			}
-		});
-
 		generateButton.addActionListener(e -> {
 			try {
 				coseKeyField.setText(generateCOSEKey());
@@ -180,97 +147,71 @@ public class SettingForm {
 		});
 	}
 
-	private void enableAlgorithms(boolean b) {
-		RS256RadioButton.setEnabled(b);
-		ES256RadioButton.setEnabled(b);
-		RS384RadioButton.setEnabled(b);
-		RS1RadioButton.setEnabled(b);
-		RS512RadioButton.setEnabled(b);
-		ES384RadioButton.setEnabled(b);
-		ES512RadioButton.setEnabled(b);
-	}
-
 	public JPanel getUI() {
 		return this.mainPanel;
 	}
 
-	private String generateCOSEKey() throws NoSuchAlgorithmException {
-		api.logging().logToOutput("\n============= generateCOSEKey =============");
-
-		if (RSARadioButton.isSelected()) {
-			keyType = "RSA";
-		} else if (EC2RadioButton.isSelected()) {
-			keyType = "EC2";
-		} else if (OKPRadioButton.isSelected()) {
-			keyType = "EdDSA";
-		}
-
-		if (RS256RadioButton.isSelected()) {
-			algorithm = "RS256";
-		} else if (ES256RadioButton.isSelected()) {
-			algorithm = "ES256";
-		} else if (edDSARadioButton.isSelected()) {
-			algorithm = "EdDSA";
-		} else if (RS384RadioButton.isSelected()) {
-			algorithm = "RS384";
-		} else if (RS1RadioButton.isSelected()) {
-			algorithm = "RS1";
-		} else if (RS512RadioButton.isSelected()) {
-			algorithm = "RS512";
-		} else if (ES384RadioButton.isSelected()) {
-			algorithm = "ES384";
-		} else if (ES512RadioButton.isSelected()) {
-			algorithm = "ES512";
-		}
-
-		coseKey = switch (keyType) {
-			case "EdDSA" -> EdDSACOSEKey.create(Util.createEdDSAKeyPair());
-			case "RSA" -> switch (algorithm) {
+	private String generateCOSEKey() {
+		try {
+			if (RS256RadioButton.isSelected()) {
+				algorithm = "RS256";
+			} else if (ES256RadioButton.isSelected()) {
+				algorithm = "ES256";
+			} else if (edDSARadioButton.isSelected()) {
+				algorithm = "EdDSA";
+			} else if (RS384RadioButton.isSelected()) {
+				algorithm = "RS384";
+			} else if (RS1RadioButton.isSelected()) {
+				algorithm = "RS1";
+			} else if (RS512RadioButton.isSelected()) {
+				algorithm = "RS512";
+			} else if (ES384RadioButton.isSelected()) {
+				algorithm = "ES384";
+			} else if (ES512RadioButton.isSelected()) {
+				algorithm = "ES512";
+			}
+			coseKey = switch (algorithm) {
 				case "RS256" -> RSACOSEKey.create(RSAUtil.createKeyPair(), COSEAlgorithmIdentifier.RS256);
-				case "ES256" -> RSACOSEKey.create(RSAUtil.createKeyPair(), COSEAlgorithmIdentifier.ES256);
 				case "RS1" -> RSACOSEKey.create(RSAUtil.createKeyPair(), COSEAlgorithmIdentifier.RS1);
-				case "EdDSA" -> RSACOSEKey.create(RSAUtil.createKeyPair(), COSEAlgorithmIdentifier.EdDSA);
 				case "RS384" -> RSACOSEKey.create(RSAUtil.createKeyPair(), COSEAlgorithmIdentifier.RS384);
 				case "RS512" -> RSACOSEKey.create(RSAUtil.createKeyPair(), COSEAlgorithmIdentifier.RS512);
-				case "ES384" -> RSACOSEKey.create(RSAUtil.createKeyPair(), COSEAlgorithmIdentifier.ES384);
-				case "ES512" -> RSACOSEKey.create(RSAUtil.createKeyPair(), COSEAlgorithmIdentifier.ES512);
-				default -> coseKey;
-			};
-			case "EC2" -> switch (algorithm) {
-				case "RS256" -> EC2COSEKey.create(ECUtil.createKeyPair(), COSEAlgorithmIdentifier.RS256);
 				case "ES256" -> EC2COSEKey.create(ECUtil.createKeyPair(), COSEAlgorithmIdentifier.ES256);
-				case "RS1" -> EC2COSEKey.create(ECUtil.createKeyPair(), COSEAlgorithmIdentifier.RS1);
-				case "EdDSA" -> EC2COSEKey.create(ECUtil.createKeyPair(), COSEAlgorithmIdentifier.EdDSA);
-				case "RS384" -> EC2COSEKey.create(ECUtil.createKeyPair(), COSEAlgorithmIdentifier.RS384);
-				case "RS512" -> EC2COSEKey.create(ECUtil.createKeyPair(), COSEAlgorithmIdentifier.RS512);
 				case "ES384" -> EC2COSEKey.create(ECUtil.createKeyPair(), COSEAlgorithmIdentifier.ES384);
 				case "ES512" -> EC2COSEKey.create(ECUtil.createKeyPair(), COSEAlgorithmIdentifier.ES512);
+				case "EdDSA" -> EdDSACOSEKey.create(Util.createEdDSAKeyPair());
 				default -> coseKey;
 			};
-			default -> null;
-		};
-		Map<String, Object> coseKeyJson = util.COSEKeyObjectToJson(coseKey);
-
-		api.logging().logToOutput("\nKey Type: " + keyType);
-		api.logging().logToOutput("\nAlgorithm: " + algorithm);
-		util.logPrettyJson("COSE Key: ", coseKeyJson);
-
-		return gsonPrettyPrinting.toJson(coseKeyJson);
+			Map<String, Object> coseKeyJson = util.COSEKeyObjectToJson(coseKey);
+			return gsonPrettyPrinting.toJson(coseKeyJson);
+		} catch (Exception e) {
+			api.logging().logToOutput("Error generateCOSEKey: " + e.getMessage());
+			for (StackTraceElement element : e.getStackTrace()) {
+				api.logging().logToOutput("\tat " + element);
+			}
+		}
+		return "";
 	}
 
 	private void printSetting(boolean isLoad) {
-		if (isLoad)
-			api.logging().logToOutput("\n============= Load Setting =============");
-		else
-			api.logging().logToOutput("\n============= Save Setting =============");
-		api.logging().logToOutput("Passkey Registration URL: " + registrationURL);
-		api.logging().logToOutput("Regex to extract Registration's clientDataJSON: " + registrationRegexClientDataJSON);
-		api.logging().logToOutput("Regex to extract Registration's attestationObject: " + registrationRegexAttestationObject);
-		api.logging().logToOutput("Passkey Authentication URL: " + authenticationURL);
-		api.logging().logToOutput("Regex to extract Authentication's clientDataJSON: " + authenticationRegexClientDataJSON);
-		api.logging().logToOutput("Regex to extract Authentication's authenticatorData: " + authenticationRegexAuthenticatorData);
-		api.logging().logToOutput("Regex to extract Authentication's signature: " + authenticationRegexSignature);
-		api.logging().logToOutput("COSE Key: " + coseKeyJsonString);
+		try {
+			if (isLoad)
+				api.logging().logToOutput("\n============= Load Setting =============");
+			else
+				api.logging().logToOutput("\n============= Save Setting =============");
+			api.logging().logToOutput("Passkey Registration URL: " + registrationURL);
+			api.logging().logToOutput("Regex to extract Registration's clientDataJSON: " + registrationRegexClientDataJSON);
+			api.logging().logToOutput("Regex to extract Registration's attestationObject: " + registrationRegexAttestationObject);
+			api.logging().logToOutput("Passkey Authentication URL: " + authenticationURL);
+			api.logging().logToOutput("Regex to extract Authentication's clientDataJSON: " + authenticationRegexClientDataJSON);
+			api.logging().logToOutput("Regex to extract Authentication's authenticatorData: " + authenticationRegexAuthenticatorData);
+			api.logging().logToOutput("Regex to extract Authentication's signature: " + authenticationRegexSignature);
+			api.logging().logToOutput("COSE Key: " + coseKeyJsonString);
+		} catch (Exception e) {
+			api.logging().logToOutput("Error printSetting: " + e.getMessage());
+			for (StackTraceElement element : e.getStackTrace()) {
+				api.logging().logToOutput("\tat " + element);
+			}
+		}
 	}
 
 	{
@@ -294,32 +235,15 @@ public class SettingForm {
 		mainPanel.setMinimumSize(new Dimension(400, 503));
 		mainPanel.setPreferredSize(new Dimension(400, 503));
 		coseKeyPanel = new JPanel();
-		coseKeyPanel.setLayout(new GridLayoutManager(4, 4, new Insets(10, 10, 10, 10), -1, -1));
+		coseKeyPanel.setLayout(new GridLayoutManager(3, 4, new Insets(10, 10, 10, 10), -1, -1));
 		mainPanel.add(coseKeyPanel, new GridConstraints(2, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, new Dimension(800, -1), 0, false));
 		coseKeyPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "COSE Key", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
 		final JLabel label1 = new JLabel();
-		label1.setText("Key Type");
+		label1.setText("Algorithm");
 		coseKeyPanel.add(label1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-		final JLabel label2 = new JLabel();
-		label2.setText("Algorithm");
-		coseKeyPanel.add(label2, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-		keyTypePanel = new JPanel();
-		keyTypePanel.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
-		coseKeyPanel.add(keyTypePanel, new GridConstraints(1, 1, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-		keyTypePanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), null, TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
-		RSARadioButton = new JRadioButton();
-		RSARadioButton.setSelected(true);
-		RSARadioButton.setText("RSA");
-		keyTypePanel.add(RSARadioButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-		EC2RadioButton = new JRadioButton();
-		EC2RadioButton.setText("EC2");
-		keyTypePanel.add(EC2RadioButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-		OKPRadioButton = new JRadioButton();
-		OKPRadioButton.setText("OKP");
-		keyTypePanel.add(OKPRadioButton, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
 		algorithmPanel = new JPanel();
 		algorithmPanel.setLayout(new GridLayoutManager(1, 8, new Insets(0, 0, 0, 0), -1, -1));
-		coseKeyPanel.add(algorithmPanel, new GridConstraints(2, 1, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+		coseKeyPanel.add(algorithmPanel, new GridConstraints(1, 1, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
 		algorithmPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), null, TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
 		ES256RadioButton = new JRadioButton();
 		ES256RadioButton.setSelected(false);
@@ -349,12 +273,12 @@ public class SettingForm {
 		algorithmPanel.add(RS256RadioButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
 		generateButton = new JButton();
 		generateButton.setText("Generate");
-		coseKeyPanel.add(generateButton, new GridConstraints(3, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+		coseKeyPanel.add(generateButton, new GridConstraints(2, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
 		final Spacer spacer1 = new Spacer();
-		coseKeyPanel.add(spacer1, new GridConstraints(3, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
-		final JLabel label3 = new JLabel();
-		label3.setText("Generated COSE Key");
-		coseKeyPanel.add(label3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+		coseKeyPanel.add(spacer1, new GridConstraints(2, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+		final JLabel label2 = new JLabel();
+		label2.setText("Generated COSE Key");
+		coseKeyPanel.add(label2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
 		final JScrollPane scrollPane1 = new JScrollPane();
 		coseKeyPanel.add(scrollPane1, new GridConstraints(0, 1, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
 		coseKeyField = new JTextArea();
@@ -367,43 +291,43 @@ public class SettingForm {
 		registrationPanel.setLayout(new GridLayoutManager(3, 2, new Insets(10, 10, 10, 10), -1, -1));
 		mainPanel.add(registrationPanel, new GridConstraints(0, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, new Dimension(800, -1), 0, false));
 		registrationPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Passkey Registration", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
-		final JLabel label4 = new JLabel();
-		label4.setText("Passkey Registration URL:");
-		registrationPanel.add(label4, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+		final JLabel label3 = new JLabel();
+		label3.setText("Passkey Registration URL:");
+		registrationPanel.add(label3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
 		registrationUrlField = new JTextField();
 		registrationPanel.add(registrationUrlField, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
-		final JLabel label5 = new JLabel();
-		label5.setText("Regex to extract Registration's clientDataJSON:");
-		registrationPanel.add(label5, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+		final JLabel label4 = new JLabel();
+		label4.setText("Regex to extract Registration's clientDataJSON:");
+		registrationPanel.add(label4, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
 		registrationClientDataJSONField = new JTextField();
 		registrationPanel.add(registrationClientDataJSONField, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
-		final JLabel label6 = new JLabel();
-		label6.setText("Regex to extract Registration's attestationObject:");
-		registrationPanel.add(label6, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+		final JLabel label5 = new JLabel();
+		label5.setText("Regex to extract Registration's attestationObject:");
+		registrationPanel.add(label5, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
 		registrationAttestationObjectField = new JTextField();
 		registrationPanel.add(registrationAttestationObjectField, new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
 		authenticationPanel = new JPanel();
 		authenticationPanel.setLayout(new GridLayoutManager(4, 2, new Insets(10, 10, 10, 10), -1, -1));
 		mainPanel.add(authenticationPanel, new GridConstraints(1, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, new Dimension(800, -1), 0, false));
 		authenticationPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Passkey Authentication", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
-		final JLabel label7 = new JLabel();
-		label7.setText("Passkey Authentication URL:");
-		authenticationPanel.add(label7, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+		final JLabel label6 = new JLabel();
+		label6.setText("Passkey Authentication URL:");
+		authenticationPanel.add(label6, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
 		authenticationUrlField = new JTextField();
 		authenticationPanel.add(authenticationUrlField, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
-		final JLabel label8 = new JLabel();
-		label8.setText("Regex to extract Authentication's clientDataJSON:");
-		authenticationPanel.add(label8, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+		final JLabel label7 = new JLabel();
+		label7.setText("Regex to extract Authentication's clientDataJSON:");
+		authenticationPanel.add(label7, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
 		authenticationClientDataJSONField = new JTextField();
 		authenticationPanel.add(authenticationClientDataJSONField, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
-		final JLabel label9 = new JLabel();
-		label9.setText("Regex to extract Authentication's authenticatorData:");
-		authenticationPanel.add(label9, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+		final JLabel label8 = new JLabel();
+		label8.setText("Regex to extract Authentication's authenticatorData:");
+		authenticationPanel.add(label8, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
 		authenticationAuthenticatorDataField = new JTextField();
 		authenticationPanel.add(authenticationAuthenticatorDataField, new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
-		final JLabel label10 = new JLabel();
-		label10.setText("Regex to extract Authentication's signature:");
-		authenticationPanel.add(label10, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+		final JLabel label9 = new JLabel();
+		label9.setText("Regex to extract Authentication's signature:");
+		authenticationPanel.add(label9, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
 		authenticationSignatureField = new JTextField();
 		authenticationPanel.add(authenticationSignatureField, new GridConstraints(3, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
 		final JPanel panel1 = new JPanel();
@@ -417,10 +341,6 @@ public class SettingForm {
 		final Spacer spacer3 = new Spacer();
 		panel1.add(spacer3, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
 		ButtonGroup buttonGroup;
-		buttonGroup = new ButtonGroup();
-		buttonGroup.add(RSARadioButton);
-		buttonGroup.add(EC2RadioButton);
-		buttonGroup.add(OKPRadioButton);
 		buttonGroup = new ButtonGroup();
 		buttonGroup.add(ES256RadioButton);
 		buttonGroup.add(RS1RadioButton);
