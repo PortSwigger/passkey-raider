@@ -102,7 +102,7 @@ class MyProxyHttpRequestHandler implements ProxyRequestHandler {
 					// sign
 					byte[] clientDataJSONBytes = Base64UrlUtil.decode(clientDataJSONValue);
 					byte[] clientDataHash = MessageDigestUtil.createSHA256().digest(clientDataJSONBytes);
-					byte[] authenticatorDataBytes = base64Utils.decode(authenticatorDataValue).getBytes();
+					byte[] authenticatorDataBytes = Base64UrlUtil.decode(authenticatorDataValue);
 					byte[] data = ByteBuffer.allocate(authenticatorDataBytes.length + clientDataHash.length).put(authenticatorDataBytes).put(clientDataHash).array();
 					String modifiedSignature = util.calculateSignature(settingForm.coseKey, data);
 
