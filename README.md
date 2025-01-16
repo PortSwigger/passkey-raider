@@ -141,7 +141,7 @@ View and edit decoded Passkey data directly within HTTP requests.
 * [Demo: demo.yubico.com](https://demo.yubico.com/webauthn-technical/)
 * [Passkeys Debugger: passkeys-debugger.io](https://www.passkeys-debugger.io/)
 * [Passkeys Debugger: webauthn.me](https://webauthn.me/debugger)
-* [Passkeys Authenticator AAGUID Explorer](https://passkeydeveloper.github.io/passkey-authenticator-aaguids/explor)
+* [Passkeys Authenticator AAGUID Explorer](https://passkeydeveloper.github.io/passkey-authenticator-aaguids/explorer)
 
 ## License
 
