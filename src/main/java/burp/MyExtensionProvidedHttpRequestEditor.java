@@ -124,8 +124,7 @@ class MyExtensionProvidedHttpRequestEditor implements ExtensionProvidedHttpReque
 						@SuppressWarnings("unchecked") Map<String, Object> authenticatorDataJson = (Map<String, Object>) textEditorContent.get("authenticatorData");
 						AuthenticatorData<AuthenticationExtensionAuthenticatorOutput> authenticatorData = util.encodeAuthenticatorData(authenticatorDataJson);
 						byte[] authenticatorDataBytes = authenticatorDataConverter.convert(authenticatorData);
-						String modifiedAuthenticatorDataB64 = base64Utils.encodeToString(ByteArray.byteArray(authenticatorDataBytes), Base64EncodingOptions.URL);
-
+						String modifiedAuthenticatorDataB64 = Base64UrlUtil.encodeToString(authenticatorDataBytes);
 						// sign
 						byte[] clientDataJSONBytes = Base64UrlUtil.decode(modifiedClientDataJSONB64);
 						byte[] clientDataHash = MessageDigestUtil.createSHA256().digest(clientDataJSONBytes);
@@ -191,7 +190,7 @@ class MyExtensionProvidedHttpRequestEditor implements ExtensionProvidedHttpReque
 					Map<String, Object> output = new HashMap<>();
 					output.put("clientDataJSON", util.decodeClientDataJSON(clientDataJSONValue));
 
-					byte[] authenticatorDataBytes = base64Utils.decode(authenticatorDataValue).getBytes();
+					byte[] authenticatorDataBytes = Base64UrlUtil.decode(authenticatorDataValue);
 
 					AuthenticatorData<AuthenticationExtensionAuthenticatorOutput> authenticatorData = authenticatorDataConverter.convert(authenticatorDataBytes);
 					Map<String, Object> authenticatorDataJson = util.decodeAuthenticatorData(authenticatorData);
