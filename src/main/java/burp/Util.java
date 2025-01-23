@@ -56,8 +56,8 @@ public class Util {
 		this.api = api;
 		ObjectConverter objectConverter = new ObjectConverter();
 		attestationObjectConverter = new AttestationObjectConverter(objectConverter);
-		gsonPrettyPrinting = new GsonBuilder().setPrettyPrinting().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
-		gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
+		gsonPrettyPrinting = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
+		gson = new GsonBuilder().disableHtmlEscaping().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
 	}
 
 	public static KeyPair createEdDSAKeyPair() throws NoSuchAlgorithmException {
@@ -556,7 +556,7 @@ public class Util {
 	public String encodeClientDataJSON(Map<String, Object> clientData) {
 		try {
 			String jsonString = gson.toJson(clientData);
-			return new String(Base64UrlUtil.encode(jsonString.getBytes(StandardCharsets.UTF_8)));
+			return new String(Base64UrlUtil.encode(jsonString.getBytes()));
 		} catch (Exception e) {
 			api.logging().logToOutput("Error encoding ClientDataJSON: " + e.getMessage());
 			for (StackTraceElement element : e.getStackTrace()) {

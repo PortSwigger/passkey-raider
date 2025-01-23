@@ -34,7 +34,7 @@ class MyProxyHttpRequestHandler implements ProxyRequestHandler {
 		this.settingForm = settingForm;
 		this.api = api;
 		this.util = new Util(api);
-		gsonPrettyPrinting = new GsonBuilder().setPrettyPrinting().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
+		gsonPrettyPrinting = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
 		base64Utils = api.utilities().base64Utils();
 	}
 

@@ -1,7 +1,6 @@
 package burp;
 
 import burp.api.montoya.MontoyaApi;
-import burp.api.montoya.core.ByteArray;
 import burp.api.montoya.http.message.HttpRequestResponse;
 import burp.api.montoya.http.message.requests.HttpRequest;
 import burp.api.montoya.ui.Selection;
@@ -53,7 +52,7 @@ class MyExtensionProvidedHttpRequestEditor implements ExtensionProvidedHttpReque
 		ObjectConverter objectConverter = new ObjectConverter();
 		authenticatorDataConverter = new AuthenticatorDataConverter(objectConverter);
 
-		gsonPrettyPrinting = new GsonBuilder().setPrettyPrinting().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
+		gsonPrettyPrinting = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
 
 		base64Utils = api.utilities().base64Utils();
 

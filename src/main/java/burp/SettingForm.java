@@ -71,7 +71,7 @@ public class SettingForm {
 		this.util = new Util(api);
 		mapType = new TypeToken<Map<String, Object>>() {
 		}.getType();
-		gsonPrettyPrinting = new GsonBuilder().setPrettyPrinting().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
+		gsonPrettyPrinting = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
 
 		settingData = api.persistence().extensionData();
 		registrationURL = settingData.getString("registrationURL") != null ? settingData.getString("registrationURL") : registrationURL;
