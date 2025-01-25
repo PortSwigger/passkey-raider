@@ -1,6 +1,7 @@
 package burp;
 
 import burp.api.montoya.MontoyaApi;
+import burp.api.montoya.core.ByteArray;
 import burp.api.montoya.http.message.HttpRequestResponse;
 import burp.api.montoya.http.message.requests.HttpRequest;
 import burp.api.montoya.ui.Selection;
@@ -9,8 +10,6 @@ import burp.api.montoya.ui.editor.RawEditor;
 import burp.api.montoya.ui.editor.extension.EditorCreationContext;
 import burp.api.montoya.ui.editor.extension.EditorMode;
 import burp.api.montoya.ui.editor.extension.ExtensionProvidedHttpRequestEditor;
-import burp.api.montoya.utilities.Base64EncodingOptions;
-import burp.api.montoya.utilities.Base64Utils;
 
 import com.webauthn4j.converter.AuthenticatorDataConverter;
 import com.webauthn4j.converter.util.ObjectConverter;
@@ -23,7 +22,10 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
 import com.google.gson.reflect.TypeToken;
 
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.lang.reflect.Type;
 import java.awt.*;
@@ -35,7 +37,6 @@ import static burp.api.montoya.core.ByteArray.byteArray;
 class MyExtensionProvidedHttpRequestEditor implements ExtensionProvidedHttpRequestEditor
 {
 	private final RawEditor requestEditor;
-	private final Base64Utils base64Utils;
 	private HttpRequestResponse requestResponse;
 	private final SettingForm settingForm;
 	private final MontoyaApi api;
@@ -53,8 +54,6 @@ class MyExtensionProvidedHttpRequestEditor implements ExtensionProvidedHttpReque
 		authenticatorDataConverter = new AuthenticatorDataConverter(objectConverter);
 
 		gsonPrettyPrinting = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
-
-		base64Utils = api.utilities().base64Utils();
 
 		if (creationContext.editorMode() == EditorMode.READ_ONLY)
 		{
@@ -92,11 +91,19 @@ class MyExtensionProvidedHttpRequestEditor implements ExtensionProvidedHttpReque
 						@SuppressWarnings("unchecked") Map<String, Object> clientDataJSON = (Map<String, Object>) textEditorContent.get("clientDataJSON");
 						@SuppressWarnings("unchecked") Map<String, Object> attestationObject = (Map<String, Object>) textEditorContent.get("attestationObject");
 
-						String modifiedClientDataJSONB64 = util.encodeClientDataJSON(clientDataJSON);
-						String modifiedAttestationObjectB64 = util.encodeAttestationObject(attestationObject);
+						String modifiedClientDataJSONB64URL = util.encodeClientDataJSON(clientDataJSON);
+						String modifiedAttestationObjectB64URL = util.encodeAttestationObject(attestationObject);
 
-						requestBody = requestBody.replaceAll(clientDataJSONValue, modifiedClientDataJSONB64);
-						requestBody = requestBody.replaceAll(attestationObjectValue, modifiedAttestationObjectB64);
+						// check Base64Url
+						String modifiedClientDataJSONB64 = settingForm.isRegisterClientDataJsonBase64URL ? modifiedClientDataJSONB64URL : Util.base64UrlToBase64(modifiedClientDataJSONB64URL);
+						String modifiedAttestationObjectB64 = settingForm.isRegisterAttestationObjectBase64URL ? modifiedAttestationObjectB64URL : Util.base64UrlToBase64(modifiedAttestationObjectB64URL);
+
+						// check URL encoded
+						String modifiedClientDataJSONB64_URLEncoded = settingForm.isRegisterClientDataJsonURLEncoded ? URLEncoder.encode(modifiedClientDataJSONB64, StandardCharsets.UTF_8) : modifiedClientDataJSONB64;
+						String modifiedAttestationObjectB64_URLEncoded = settingForm.isRegisterAttestationObjectURLEncoded ? URLEncoder.encode(modifiedAttestationObjectB64, StandardCharsets.UTF_8) : modifiedAttestationObjectB64;
+
+						requestBody = requestBody.replaceAll(Pattern.quote(clientDataJSONValue), modifiedClientDataJSONB64_URLEncoded);
+						requestBody = requestBody.replaceAll(Pattern.quote(attestationObjectValue), modifiedAttestationObjectB64_URLEncoded);
 
 						request = requestResponse.request().withBody(requestBody);
 					}
@@ -117,22 +124,33 @@ class MyExtensionProvidedHttpRequestEditor implements ExtensionProvidedHttpReque
 
 						// encode clientDataJSON
 						@SuppressWarnings("unchecked") Map<String, Object> clientDataJSON = (Map<String, Object>) textEditorContent.get("clientDataJSON");
-						String modifiedClientDataJSONB64 = util.encodeClientDataJSON(clientDataJSON);
+						String modifiedClientDataJSONB64URL = util.encodeClientDataJSON(clientDataJSON);
 
 						// encode authenticatorData
 						@SuppressWarnings("unchecked") Map<String, Object> authenticatorDataJson = (Map<String, Object>) textEditorContent.get("authenticatorData");
 						AuthenticatorData<AuthenticationExtensionAuthenticatorOutput> authenticatorData = util.encodeAuthenticatorData(authenticatorDataJson);
 						byte[] authenticatorDataBytes = authenticatorDataConverter.convert(authenticatorData);
-						String modifiedAuthenticatorDataB64 = Base64UrlUtil.encodeToString(authenticatorDataBytes);
+						String modifiedAuthenticatorDataB64URL = Base64UrlUtil.encodeToString(authenticatorDataBytes);
+
 						// sign
-						byte[] clientDataJSONBytes = Base64UrlUtil.decode(modifiedClientDataJSONB64);
+						byte[] clientDataJSONBytes = Base64UrlUtil.decode(modifiedClientDataJSONB64URL);
 						byte[] clientDataHash = MessageDigestUtil.createSHA256().digest(clientDataJSONBytes);
 						byte[] data = ByteBuffer.allocate(authenticatorDataBytes.length + clientDataHash.length).put(authenticatorDataBytes).put(clientDataHash).array();
-						String modifiedSignature = util.calculateSignature(settingForm.coseKey, data);
+						String modifiedSignatureB64URL = util.calculateSignature(settingForm.coseKey, data);
 
-						requestBody = requestBody.replaceAll(clientDataJSONValue, modifiedClientDataJSONB64);
-						requestBody = requestBody.replaceAll(authenticatorDataValue, modifiedAuthenticatorDataB64);
-						requestBody = requestBody.replaceAll(signatureValue, modifiedSignature);
+						// check Base64Url
+						String modifiedClientDataJSONB64 = settingForm.isAuthenClientDataJsonBase64URL ? modifiedClientDataJSONB64URL : Util.base64UrlToBase64(modifiedClientDataJSONB64URL);
+						String modifiedAuthenticatorDataB64 = settingForm.isAuthenAuthenticatorDataBase64URL ? modifiedAuthenticatorDataB64URL : Util.base64UrlToBase64(modifiedAuthenticatorDataB64URL);
+						String modifiedSignatureB64 = settingForm.isAuthenSignatureBase64URL ? modifiedSignatureB64URL : Util.base64UrlToBase64(modifiedSignatureB64URL);
+
+						// check URL encoded
+						String modifiedClientDataJSONB64_URLEncoded = settingForm.isAuthenClientDataJsonURLEncoded ? URLEncoder.encode(modifiedClientDataJSONB64, StandardCharsets.UTF_8) : modifiedClientDataJSONB64;
+						String modifiedAuthenticatorDataB64_URLEncoded = settingForm.isAuthenAuthenticatorDataURLEncoded ? URLEncoder.encode(modifiedAuthenticatorDataB64, StandardCharsets.UTF_8) : modifiedAuthenticatorDataB64;
+						String modifiedSignatureB64_URLEncoded = settingForm.isAuthenSignatureURLEncoded ? URLEncoder.encode(modifiedSignatureB64, StandardCharsets.UTF_8) : modifiedSignatureB64;
+
+						requestBody = requestBody.replaceAll(Pattern.quote(clientDataJSONValue), modifiedClientDataJSONB64_URLEncoded);
+						requestBody = requestBody.replaceAll(Pattern.quote(authenticatorDataValue), modifiedAuthenticatorDataB64_URLEncoded);
+						requestBody = requestBody.replaceAll(Pattern.quote(signatureValue), modifiedSignatureB64_URLEncoded);
 
 						request = requestResponse.request().withBody(requestBody);
 					}
@@ -156,6 +174,7 @@ class MyExtensionProvidedHttpRequestEditor implements ExtensionProvidedHttpReque
 		try {
 			this.requestResponse = requestResponse;
 			String requestBody = requestResponse.request().bodyToString();
+			this.requestEditor.setContents(ByteArray.byteArray());
 
 			if (requestResponse.url().equalsIgnoreCase(settingForm.registrationURL)) {
 				Pattern patternClientDataJSON = Pattern.compile(settingForm.registrationRegexClientDataJSON);
@@ -168,14 +187,20 @@ class MyExtensionProvidedHttpRequestEditor implements ExtensionProvidedHttpReque
 					String clientDataJSONValue = matcherClientDataJSON.group(1);
 					String attestationObjectValue = matcherAttestationObject.group(1);
 
+					// check clientDataJSONValue URL encoded
+					String clientDataJSON_URLDecoded = settingForm.isRegisterClientDataJsonURLEncoded ? URLDecoder.decode(clientDataJSONValue, StandardCharsets.UTF_8) : clientDataJSONValue;
+
+					// check attestationObjectValue URL encoded
+					String attestationObject_URLDecoded = settingForm.isRegisterAttestationObjectURLEncoded ? URLDecoder.decode(attestationObjectValue, StandardCharsets.UTF_8) : attestationObjectValue;
+
 					Map<String, Object> output = new HashMap<>();
-					output.put("clientDataJSON", util.decodeClientDataJSON(clientDataJSONValue));
-					output.put("attestationObject", util.decodeAttestationObject(attestationObjectValue));
+					output.put("clientDataJSON", util.decodeClientDataJSON(Util.base64ToBase64Url(clientDataJSON_URLDecoded)));
+					output.put("attestationObject", util.decodeAttestationObject(Util.base64ToBase64Url(attestationObject_URLDecoded)));
 					String outputJsonString = gsonPrettyPrinting.toJson(output);
 
 					this.requestEditor.setContents(byteArray(outputJsonString));
 				}
-			} else if ( requestResponse.url().equalsIgnoreCase(settingForm.authenticationURL)) {
+			} else if (requestResponse.url().equalsIgnoreCase(settingForm.authenticationURL)) {
 				Pattern patternClientDataJSON = Pattern.compile(settingForm.authenticationRegexClientDataJSON);
 				Matcher matcherClientDataJSON = patternClientDataJSON.matcher(requestBody);
 
@@ -186,10 +211,14 @@ class MyExtensionProvidedHttpRequestEditor implements ExtensionProvidedHttpReque
 					String clientDataJSONValue = matcherClientDataJSON.group(1);
 					String authenticatorDataValue = matcherAuthenticatorData.group(1);
 
-					Map<String, Object> output = new HashMap<>();
-					output.put("clientDataJSON", util.decodeClientDataJSON(clientDataJSONValue));
+					// check URL encoded
+					String clientDataJSON_URLDecoded = settingForm.isAuthenClientDataJsonURLEncoded ? URLDecoder.decode(clientDataJSONValue, StandardCharsets.UTF_8) : clientDataJSONValue;
+					String authenticatorData_URLDecoded = settingForm.isAuthenAuthenticatorDataURLEncoded ? URLDecoder.decode(authenticatorDataValue, StandardCharsets.UTF_8) : authenticatorDataValue;
 
-					byte[] authenticatorDataBytes = Base64UrlUtil.decode(authenticatorDataValue);
+					Map<String, Object> output = new HashMap<>();
+					output.put("clientDataJSON", util.decodeClientDataJSON(Util.base64ToBase64Url(clientDataJSON_URLDecoded)));
+
+					byte[] authenticatorDataBytes = Base64UrlUtil.decode(Util.base64ToBase64Url(authenticatorData_URLDecoded));
 
 					AuthenticatorData<AuthenticationExtensionAuthenticatorOutput> authenticatorData = authenticatorDataConverter.convert(authenticatorDataBytes);
 					Map<String, Object> authenticatorDataJson = util.decodeAuthenticatorData(authenticatorData);

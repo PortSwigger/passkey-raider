@@ -92,6 +92,19 @@ public class Util {
 		return bytes;
 	}
 
+	public static String base64ToBase64Url(String base64) {
+		return base64.replace('+', '-')
+				.replace('/', '_')
+				.replace("=", "");
+	}
+
+	public static String base64UrlToBase64(String base64Url) {
+		String base64 = base64Url.replace('-', '+')
+				.replace('_', '/');
+		int paddingLength = (4 - base64.length() % 4) % 4;
+		return base64 + "=".repeat(paddingLength);
+	}
+
 	public Map<String, Object> COSEKeyObjectToJson(COSEKey coseKey) {
 		Map<String, Object> coseKeyJson = new HashMap<>();
 		try {

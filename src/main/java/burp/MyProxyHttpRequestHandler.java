@@ -14,7 +14,10 @@ import com.webauthn4j.util.Base64UrlUtil;
 import com.webauthn4j.util.MessageDigestUtil;
 
 import java.lang.reflect.Type;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -55,15 +58,26 @@ class MyProxyHttpRequestHandler implements ProxyRequestHandler {
 				if (matcherAttestationObject.find()) {
 					String attestationObjectValue = matcherAttestationObject.group(1);
 
-					Map<String, Object> attestationObject = util.decodeAttestationObject(attestationObjectValue);
+					// check attestationObjectValue URL encoded
+					String attestationObject_URLDecoded = settingForm.isRegisterAttestationObjectURLEncoded ? URLDecoder.decode(attestationObjectValue, StandardCharsets.UTF_8) : attestationObjectValue;
+
+					// convert attestationObjectValue to Base64Url
+					Map<String, Object> attestationObject = util.decodeAttestationObject(Util.base64ToBase64Url(attestationObject_URLDecoded));
 
 					Type mapType = new TypeToken<Map<String, Object>>() {}.getType();
 					Map<String, Object> coseKey = gsonPrettyPrinting.fromJson(settingForm.coseKeyJsonString, mapType);
 
 					((Map<String, Object>) ((Map<String, Object>) attestationObject.get("authenticatorData")).get("attestedCredentialData")).put("coseKey", coseKey);
 
-					String modifiedAttestationObjectB64 = util.encodeAttestationObject(attestationObject);
-					requestBody = requestBody.replaceAll(attestationObjectValue, modifiedAttestationObjectB64);
+					String modifiedAttestationObjectB64URL = util.encodeAttestationObject(attestationObject);
+
+					// check attestationObjectValue Base64Url
+					String modifiedAttestationObjectB64 = settingForm.isRegisterAttestationObjectBase64URL ? modifiedAttestationObjectB64URL : Util.base64UrlToBase64(modifiedAttestationObjectB64URL);
+
+					// check attestationObjectValue URL encoded
+					String attestationObject_URLEncoded = settingForm.isRegisterAttestationObjectURLEncoded ? URLEncoder.encode(modifiedAttestationObjectB64, StandardCharsets.UTF_8) : modifiedAttestationObjectB64;
+
+					requestBody = requestBody.replaceAll(Pattern.quote(attestationObjectValue), attestationObject_URLEncoded);
 
 					return ProxyRequestReceivedAction.continueWith(interceptedRequest.withBody(requestBody), interceptedRequest.annotations().withHighlightColor(BLUE));
 				}
@@ -99,14 +113,22 @@ class MyProxyHttpRequestHandler implements ProxyRequestHandler {
 					String authenticatorDataValue = matcherAuthenticatorData.group(1);
 					String signatureValue = matcherSignature.group(1);
 
-					// sign
-					byte[] clientDataJSONBytes = Base64UrlUtil.decode(clientDataJSONValue);
-					byte[] clientDataHash = MessageDigestUtil.createSHA256().digest(clientDataJSONBytes);
-					byte[] authenticatorDataBytes = Base64UrlUtil.decode(authenticatorDataValue);
-					byte[] data = ByteBuffer.allocate(authenticatorDataBytes.length + clientDataHash.length).put(authenticatorDataBytes).put(clientDataHash).array();
-					String modifiedSignature = util.calculateSignature(settingForm.coseKey, data);
+					// check URL encoded
+					String clientDataJSON_URLDecoded = settingForm.isAuthenClientDataJsonURLEncoded ? URLDecoder.decode(clientDataJSONValue, StandardCharsets.UTF_8) : clientDataJSONValue;
+					String authenticatorData_URLDecoded = settingForm.isAuthenAuthenticatorDataURLEncoded ? URLDecoder.decode(authenticatorDataValue, StandardCharsets.UTF_8) : authenticatorDataValue;
 
-					requestBody = requestBody.replaceAll(signatureValue, modifiedSignature);
+					// sign
+					byte[] clientDataJSONBytes = Base64UrlUtil.decode(Util.base64ToBase64Url(clientDataJSON_URLDecoded));
+					byte[] clientDataHash = MessageDigestUtil.createSHA256().digest(clientDataJSONBytes);
+					byte[] authenticatorDataBytes = Base64UrlUtil.decode(Util.base64ToBase64Url(authenticatorData_URLDecoded));
+					byte[] data = ByteBuffer.allocate(authenticatorDataBytes.length + clientDataHash.length).put(authenticatorDataBytes).put(clientDataHash).array();
+					String modifiedSignatureB64URL = util.calculateSignature(settingForm.coseKey, data);
+					String modifiedSignatureB64 = settingForm.isAuthenSignatureBase64URL ? modifiedSignatureB64URL : Util.base64UrlToBase64(modifiedSignatureB64URL);
+
+					// check URL encoded
+					String modifiedSignatureB64_URLEncoded = settingForm.isAuthenSignatureURLEncoded ? URLEncoder.encode(modifiedSignatureB64, StandardCharsets.UTF_8) : modifiedSignatureB64;
+
+					requestBody = requestBody.replaceAll(Pattern.quote(signatureValue), modifiedSignatureB64_URLEncoded);
 					return ProxyRequestToBeSentAction.continueWith(interceptedRequest.withBody(requestBody));
 				}
 			}
