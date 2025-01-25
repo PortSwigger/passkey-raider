@@ -124,16 +124,8 @@ public class SettingForm {
 
 		coseKeyJson = gsonPrettyPrinting.fromJson(coseKeyJsonString, mapType);
 		coseKey = util.COSEKeyJsonToObject(coseKeyJson);
-		switch ((String) coseKeyJson.get("algorithm")) {
-			case "ES256" -> ES256RadioButton.setSelected(true);
-			case "RS1" -> RS1RadioButton.setSelected(true);
-			case "EdDSA" -> edDSARadioButton.setSelected(true);
-			case "RS384" -> RS384RadioButton.setSelected(true);
-			case "RS512" -> RS512RadioButton.setSelected(true);
-			case "ES384" -> ES384RadioButton.setSelected(true);
-			case "ES512" -> ES512RadioButton.setSelected(true);
-			default -> RS256RadioButton.setSelected(true);
-		}
+
+		setAlgorithmRadioButton((String) coseKeyJson.get("algorithm"));
 
 		printSetting(true);
 
@@ -210,6 +202,7 @@ public class SettingForm {
 			coseKeyJsonString = coseKeyField.getText();
 			coseKeyJson = gsonPrettyPrinting.fromJson(coseKeyJsonString, mapType);
 			coseKey = util.COSEKeyJsonToObject(coseKeyJson);
+			setAlgorithmRadioButton((String) coseKeyJson.get("algorithm"));
 
 			settingData.setString("registrationURL", registrationURL);
 			settingData.setString("registrationClientDataJSON", registrationRegexClientDataJSON);
@@ -240,6 +233,19 @@ public class SettingForm {
 
 	public JPanel getUI() {
 		return this.mainPanel;
+	}
+
+	private void setAlgorithmRadioButton(String algorithm) {
+		switch (algorithm) {
+			case "ES256" -> ES256RadioButton.setSelected(true);
+			case "RS1" -> RS1RadioButton.setSelected(true);
+			case "EdDSA" -> edDSARadioButton.setSelected(true);
+			case "RS384" -> RS384RadioButton.setSelected(true);
+			case "RS512" -> RS512RadioButton.setSelected(true);
+			case "ES384" -> ES384RadioButton.setSelected(true);
+			case "ES512" -> ES512RadioButton.setSelected(true);
+			default -> RS256RadioButton.setSelected(true);
+		}
 	}
 
 	private String generateCOSEKey() {
