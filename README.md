@@ -2,7 +2,7 @@
 
 ## Description
 
-Passkey Raider is a Burp Suite extension designed for testing Passkey systems. It offers three core functionalities:
+Passkey Raider is a Burp Suite extension designed to facilitate comprehensive testing of Passkey systems. It offers three core functionalities:
 
 1. Decode and encode Passkey data in HTTP requests.
 2. Automatically replace the public key in Passkey registration flows with a generated public key.
@@ -10,18 +10,32 @@ Passkey Raider is a Burp Suite extension designed for testing Passkey systems. I
 
 ## Features
 
-* **Regex Support:** Extract clientDataJSON, attestationObject, authenticatorData, and signature values from HTTP requests.
-* **Data Decoding/Encoding:**
+* **Regex Support:**
+    
+    Extract Passkey components (clientDataJSON, attestationObject, authenticatorData, and signature) from HTTP requests.
+* **Encoding Support:**
+
+    Handle the following formats:
+    * URL-encoded
+    * Base64
+    * Base64URL
+* **Passkey Data Type Support:**
    * clientDataJSON
    * AttestationObject
    * authenticatorData
    * Attestation Statement (None, AndroidKey, AndroidSafetyNet, AppleAnonymous, FIDOU2F, Packed, TPM)
-* **Algorithms Support:** Generate key pairs using algorithms such as RS256, ES256, RS1, EdDSA, RS384, RS512, ES384, and ES512.
+* **Key Pair Generation:**
+
+    Generate key pairs using algorithms such as RS256, ES256, RS1, EdDSA, RS384, RS512, ES384, and ES512.
 * **Automation:**
-   * Replace the public key during Passkey registration flows. 
-   * Sign data in Passkey authentication flows automatically.
-* **Project Integration:** Save and load settings directly into Burp Suite project file.
-* **Request Highlighting:** Identify and highlight Passkey registration and authentication requests in the Proxy tool.
+   * Automatically replace a public key during Passkey registration flows. 
+   * Automatically sign data in Passkey authentication flows.
+* **Project Integration:**
+
+    Save and load settings directly into Burp Suite project file.
+* **Request Highlighting:**
+
+    Identify and highlight Passkey registration and authentication requests in Burp Suite's Proxy tool.
 
 ## Installation
 
@@ -32,7 +46,7 @@ The recommended and easiest method is via Burp Suite's BApp Store. Refer to the 
 ### Manual Installation
 
 1. Download the latest release:
-[Passkey-Raider-1.0.0.jar](https://github.com/siamthanathack/Passkey-Raider/releases/download/v1.0.0/Passkey-Raider-1.0.0.jar).
+[Passkey-Raider-1.0.1.jar](https://github.com/siamthanathack/Passkey-Raider/releases/download/v1.0.1/Passkey-Raider-1.0.1.jar).
 2. Open Burp Suite, navigate to `Extensions` > `Add`, and load the JAR file.
 
 ## Building from Source
@@ -58,17 +72,82 @@ Passkey Raider can be built from source using [IntelliJ IDEA](https://www.jetbra
 
    * Navigate to `Build` > `Build Project`.
    * Run the `shadowJar` task in the Gradle tool window on right hand side of the IntelliJ IDEA.
-4. The JAR file (`Passkey-Raider-1.0.0.jar`) will be generated in the `build/libs` directory.
+4. The JAR file (`Passkey-Raider-1.0.1.jar`) will be generated in the `build/libs` directory.
 
 ## Usage
 
-The extension provides two main components: Settings Page and Passkey Message Editor.
+Passkey Raider includes two main components: Settings Page and Passkey Message Editor.
 
 ### Setting Page
 
 Configure Passkey settings such as URLs, regex patterns for extracting data, and generating key pairs before Passkey testing.
 
 ![setting_page](./doc/setting_page.png)
+
+* **URLs:**
+
+    URLs of Passkey registration and authentication requests.
+* **Regex:**
+
+    Regex patterns for extracting Passkey data from HTTP requests.
+
+    Grouping in Regex (subpattern enclosed within the parentheses ()) is required since the extension will use the matched data in group.
+* **URL Encoded:**
+
+    This check box must be checked if data is URL encoded.
+
+    Example:
+    * MRkzKPjiHftsmfMi0i17C1CHeOZP%2B7qG5SKTN5AxuHQFAAAAEw%3D%3D
+* **Base64:**
+
+    This radio button must be selected if data is Base64 (standard) format.
+
+    Example:
+    * MEUCIQCeWQLEXQR4sRPWalJY7KhnMSN5lfhp%2B%2ByihpS%2Fe94NFgIgeqENQT4RU1uIw1KjdiN4LNQwC7vxD6go%2FDERYwSZzkY%3D
+    * MEUCIQCeWQLEXQR4sRPWalJY7KhnMSN5lfhpyihpS/e94NFgIgeqENQT4RU1uIw1KjdiN4LNQwC7vxD6go/DERYwSZzkY=
+* **Base64URL:**
+
+    This radio button must be selected if data is Base64 (URL-safe standard) format.
+
+    Example:
+    * MEQCIBeC2lYXgSJqJTYW-Li446fHa_ik857wRRWnBe-l4luQAiAd1mB9fE3mAC6RLHed9aVyTAadsfHVAx0tu3sGlKuczQ
+* **Generated COSE Key:**
+
+    A generated key pair to be used on Passkey registration and authentication flows.
+
+    This key pair can be edited or imported from other Burp Suite projects.
+
+* **Algorithm:**
+
+    An algorithm for generating key pair. It is recommended to select an algorithm that the target web supports. 
+
+#### Example setting for Cloudflare
+
+![setting_page](./doc/cloudflare.png)
+
+```
+Passkey Registration URL: https://dash.cloudflare.com/api/v4/user/two_factor_authentication/security_key/validate_registration
+Regex to extract Registration's clientDataJSON: "clientDataJSON":"([^"]+)
+Regex to extract Registration's attestationObject: "attestationObject":"([^"]+)
+Passkey Authentication URL: https://dash.cloudflare.com/api/v4/two-factor
+Regex to extract Authentication's clientDataJSON: \\"clientDataJSON\\":\\"([^"\\]+)\\"
+Regex to extract Authentication's authenticatorData: \\"authenticatorData\\":\\"([^"\\]+)\\"
+Regex to extract Authentication's signature: \\"signature\\":\\"([^"\\]+)\\"
+```
+
+#### Example setting for Facebook
+
+![setting_page](./doc/facebook.png)
+
+```
+Passkey Registration URL: https://accountscenter.facebook.com/api/graphql/
+Regex to extract Registration's clientDataJSON: client_data_json%22%3A%22([\w%/=\-_]+)%22%2C%22credential_id
+Regex to extract Registration's attestationObject: attestation_object%22%3A%22([\w%/=\-_]+)%22%2C%22client_data_json
+Passkey Authentication URL: https://www.facebook.com/api/graphql/
+Regex to extract Authentication's clientDataJSON: client_data_json%5C%22%3A%5C%22([\w%/=\-_]+)%5C%22%2C%5C%22signature
+Regex to extract Authentication's authenticatorData: authenticator_data%5C%22%3A%5C%22([\w%/=\-_]+)%5C%22%2C%5C%22client_data_json
+Regex to extract Authentication's signature: signature%5C%22%3A%5C%22([\w%/=\-_]+)%5C%22%2C%5C%22user_handle
+```
 
 ### Passkey Message Editor
 
@@ -142,6 +221,8 @@ View and edit decoded Passkey data directly within HTTP requests.
 * [Passkeys Debugger: passkeys-debugger.io](https://www.passkeys-debugger.io/)
 * [Passkeys Debugger: webauthn.me](https://webauthn.me/debugger)
 * [Passkeys Authenticator AAGUID Explorer](https://passkeydeveloper.github.io/passkey-authenticator-aaguids/explorer)
+* [Regex Tester and Debugger](https://regex101.com)
+* [Base64 Variants Summary Table](https://en.wikipedia.org/wiki/Base64#Variants_summary_table)
 
 ## License
 
