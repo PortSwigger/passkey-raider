@@ -230,4 +230,11 @@ See the [LICENSE](LICENSE) file (MIT License) for license rights and limitations
 
 ## Author
 
-* Peeranat Thantaletong
+**Peeranat Thantaletong**  
+**Siam Thanat Hack Co., Ltd. (STH)**
+
+At STH, we are providing professional penetration testing services and offensive security expertise.
+For business inquiries, quotes, or additional information, please reach out:
+
+- **Website:** [https://sth.sh](https://sth.sh)  
+- **LINE:** `@siamthanathack`  
