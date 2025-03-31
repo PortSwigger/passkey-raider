@@ -22,6 +22,5 @@ public class PasskeyEditorExtension implements BurpExtension
 
 		// Register proxy handlers with Burp.
 		api.proxy().registerRequestHandler(new MyProxyHttpRequestHandler(settingForm, api));
-		api.proxy().registerResponseHandler(new MyProxyHttpResponseHandler());
 	}
 }
