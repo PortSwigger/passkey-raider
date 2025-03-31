@@ -40,7 +40,6 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.lang.reflect.Type;
-import java.nio.charset.StandardCharsets;
 
 public class Util {
 	private final MontoyaApi api;
