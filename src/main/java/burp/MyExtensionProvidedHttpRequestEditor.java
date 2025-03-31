@@ -10,6 +10,9 @@ import burp.api.montoya.ui.editor.RawEditor;
 import burp.api.montoya.ui.editor.extension.EditorCreationContext;
 import burp.api.montoya.ui.editor.extension.EditorMode;
 import burp.api.montoya.ui.editor.extension.ExtensionProvidedHttpRequestEditor;
+import burp.api.montoya.utilities.Base64DecodingOptions;
+import burp.api.montoya.utilities.Base64Utils;
+import burp.api.montoya.utilities.Base64EncodingOptions;
 
 import com.webauthn4j.converter.AuthenticatorDataConverter;
 import com.webauthn4j.converter.util.ObjectConverter;
@@ -40,6 +43,7 @@ class MyExtensionProvidedHttpRequestEditor implements ExtensionProvidedHttpReque
 	private HttpRequestResponse requestResponse;
 	private final SettingForm settingForm;
 	private final MontoyaApi api;
+	private final Base64Utils base64Utils;
 	private final Gson gsonPrettyPrinting;
 	private final Util util;
 
@@ -50,6 +54,7 @@ class MyExtensionProvidedHttpRequestEditor implements ExtensionProvidedHttpReque
 		this.settingForm = settingForm;
 		this.api = api;
 		this.util = new Util(api);
+		base64Utils = api.utilities().base64Utils();
 		ObjectConverter objectConverter = new ObjectConverter();
 		authenticatorDataConverter = new AuthenticatorDataConverter(objectConverter);
 
@@ -130,10 +135,10 @@ class MyExtensionProvidedHttpRequestEditor implements ExtensionProvidedHttpReque
 						@SuppressWarnings("unchecked") Map<String, Object> authenticatorDataJson = (Map<String, Object>) textEditorContent.get("authenticatorData");
 						AuthenticatorData<AuthenticationExtensionAuthenticatorOutput> authenticatorData = util.encodeAuthenticatorData(authenticatorDataJson);
 						byte[] authenticatorDataBytes = authenticatorDataConverter.convert(authenticatorData);
-						String modifiedAuthenticatorDataB64URL = Base64UrlUtil.encodeToString(authenticatorDataBytes);
+						String modifiedAuthenticatorDataB64URL = base64Utils.encodeToString(ByteArray.byteArray(authenticatorDataBytes), Base64EncodingOptions.URL);
 
 						// sign
-						byte[] clientDataJSONBytes = Base64UrlUtil.decode(modifiedClientDataJSONB64URL);
+						byte[] clientDataJSONBytes = base64Utils.decode(modifiedClientDataJSONB64URL, Base64DecodingOptions.URL).getBytes();
 						byte[] clientDataHash = MessageDigestUtil.createSHA256().digest(clientDataJSONBytes);
 						byte[] data = ByteBuffer.allocate(authenticatorDataBytes.length + clientDataHash.length).put(authenticatorDataBytes).put(clientDataHash).array();
 						String modifiedSignatureB64URL = util.calculateSignature(settingForm.coseKey, data);
@@ -218,7 +223,7 @@ class MyExtensionProvidedHttpRequestEditor implements ExtensionProvidedHttpReque
 					Map<String, Object> output = new HashMap<>();
 					output.put("clientDataJSON", util.decodeClientDataJSON(Util.base64ToBase64Url(clientDataJSON_URLDecoded)));
 
-					byte[] authenticatorDataBytes = Base64UrlUtil.decode(Util.base64ToBase64Url(authenticatorData_URLDecoded));
+					byte[] authenticatorDataBytes = base64Utils.decode(Util.base64ToBase64Url(authenticatorData_URLDecoded), Base64DecodingOptions.URL).getBytes();
 
 					AuthenticatorData<AuthenticationExtensionAuthenticatorOutput> authenticatorData = authenticatorDataConverter.convert(authenticatorDataBytes);
 					Map<String, Object> authenticatorDataJson = util.decodeAuthenticatorData(authenticatorData);

@@ -2,6 +2,10 @@ package burp;
 
 
 import burp.api.montoya.MontoyaApi;
+import burp.api.montoya.core.ByteArray;
+import burp.api.montoya.utilities.Base64DecodingOptions;
+import burp.api.montoya.utilities.Base64EncodingOptions;
+import burp.api.montoya.utilities.Base64Utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -40,6 +44,7 @@ import java.nio.charset.StandardCharsets;
 
 public class Util {
 	private final MontoyaApi api;
+	private final Base64Utils base64Utils;
 	private final Gson gsonPrettyPrinting;
 	private final Gson gson;
 
@@ -54,6 +59,7 @@ public class Util {
 
 	Util(MontoyaApi api) {
 		this.api = api;
+		base64Utils = api.utilities().base64Utils();
 		ObjectConverter objectConverter = new ObjectConverter();
 		attestationObjectConverter = new AttestationObjectConverter(objectConverter);
 		gsonPrettyPrinting = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
@@ -221,7 +227,7 @@ public class Util {
 			Objects.requireNonNull(signature).initSign(coseKey.getPrivateKey());
 			signature.update(data);
 
-			return Base64UrlUtil.encodeToString(signature.sign());
+			return base64Utils.encodeToString(ByteArray.byteArray(signature.sign()), Base64EncodingOptions.URL);
 		} catch (Exception e) {
 			api.logging().logToOutput("Signature calculation error: " + e.getMessage());
 			for (StackTraceElement element : e.getStackTrace()) {
@@ -524,7 +530,9 @@ public class Util {
 			}
 
 			@SuppressWarnings("unchecked") AttestationObject attestationObject = new AttestationObject((AuthenticatorData<RegistrationExtensionAuthenticatorOutput>) authenticatorData, Objects.requireNonNull(attestationStatement));
-			return attestationObjectConverter.convertToBase64urlString(attestationObject);
+
+			byte[] bytes = attestationObjectConverter.convertToBytes(attestationObject);
+			return base64Utils.encodeToString(ByteArray.byteArray(bytes), Base64EncodingOptions.URL);
 		} catch (Exception e) {
 			api.logging().logToOutput("Error encoding attestation object: " + e.getMessage());
 			for (StackTraceElement element : e.getStackTrace()) {
@@ -554,7 +562,7 @@ public class Util {
 
 	public Map<String, Object> decodeClientDataJSON(String clientDataJSONB64) {
 		try {
-			String clientDataJSONString = new String(Base64UrlUtil.decode(clientDataJSONB64));
+			String clientDataJSONString = String.valueOf(base64Utils.decode(clientDataJSONB64, Base64DecodingOptions.URL));
 			Type mapType = new TypeToken<Map<String, Object>>() {}.getType();
 			return gsonPrettyPrinting.fromJson(clientDataJSONString, mapType);
 		} catch (Exception e) {
@@ -569,7 +577,7 @@ public class Util {
 	public String encodeClientDataJSON(Map<String, Object> clientData) {
 		try {
 			String jsonString = gson.toJson(clientData);
-			return new String(Base64UrlUtil.encode(jsonString.getBytes()));
+			return base64Utils.encodeToString(ByteArray.byteArray(jsonString.getBytes()), Base64EncodingOptions.URL);
 		} catch (Exception e) {
 			api.logging().logToOutput("Error encoding ClientDataJSON: " + e.getMessage());
 			for (StackTraceElement element : e.getStackTrace()) {

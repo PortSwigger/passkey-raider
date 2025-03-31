@@ -5,12 +5,12 @@ import burp.api.montoya.proxy.http.InterceptedRequest;
 import burp.api.montoya.proxy.http.ProxyRequestHandler;
 import burp.api.montoya.proxy.http.ProxyRequestReceivedAction;
 import burp.api.montoya.proxy.http.ProxyRequestToBeSentAction;
+import burp.api.montoya.utilities.Base64DecodingOptions;
 import burp.api.montoya.utilities.Base64Utils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
 import com.google.gson.reflect.TypeToken;
-import com.webauthn4j.util.Base64UrlUtil;
 import com.webauthn4j.util.MessageDigestUtil;
 
 import java.lang.reflect.Type;
@@ -118,9 +118,9 @@ class MyProxyHttpRequestHandler implements ProxyRequestHandler {
 					String authenticatorData_URLDecoded = settingForm.isAuthenAuthenticatorDataURLEncoded ? URLDecoder.decode(authenticatorDataValue, StandardCharsets.UTF_8) : authenticatorDataValue;
 
 					// sign
-					byte[] clientDataJSONBytes = Base64UrlUtil.decode(Util.base64ToBase64Url(clientDataJSON_URLDecoded));
+					byte[] clientDataJSONBytes = base64Utils.decode(Util.base64ToBase64Url(clientDataJSON_URLDecoded), Base64DecodingOptions.URL).getBytes();
 					byte[] clientDataHash = MessageDigestUtil.createSHA256().digest(clientDataJSONBytes);
-					byte[] authenticatorDataBytes = Base64UrlUtil.decode(Util.base64ToBase64Url(authenticatorData_URLDecoded));
+					byte[] authenticatorDataBytes = base64Utils.decode(Util.base64ToBase64Url(authenticatorData_URLDecoded), Base64DecodingOptions.URL).getBytes();
 					byte[] data = ByteBuffer.allocate(authenticatorDataBytes.length + clientDataHash.length).put(authenticatorDataBytes).put(clientDataHash).array();
 					String modifiedSignatureB64URL = util.calculateSignature(settingForm.coseKey, data);
 					String modifiedSignatureB64 = settingForm.isAuthenSignatureBase64URL ? modifiedSignatureB64URL : Util.base64UrlToBase64(modifiedSignatureB64URL);
