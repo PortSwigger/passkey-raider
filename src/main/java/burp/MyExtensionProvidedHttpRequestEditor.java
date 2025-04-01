@@ -83,11 +83,8 @@ class MyExtensionProvidedHttpRequestEditor implements ExtensionProvidedHttpReque
 				util.logPrettyJson("textEditorContent: ", textEditorContent);
 
 				if (requestResponse.url().equalsIgnoreCase(settingForm.registrationURL)) {
-					Pattern patternClientDataJSON = Pattern.compile(settingForm.registrationRegexClientDataJSON);
-					Matcher matcherClientDataJSON = patternClientDataJSON.matcher(requestBody);
-
-					Pattern patternAttestationObject = Pattern.compile(settingForm.registrationRegexAttestationObject);
-					Matcher matcherAttestationObject = patternAttestationObject.matcher(requestBody);
+					Matcher matcherClientDataJSON = settingForm.registrationCompiledRegexClientDataJSON.matcher(requestBody);
+					Matcher matcherAttestationObject = settingForm.registrationCompiledRegexAttestationObject.matcher(requestBody);
 
 					if (matcherClientDataJSON.find() && matcherAttestationObject.find()) {
 						String clientDataJSONValue = matcherClientDataJSON.group(1);
@@ -113,14 +110,9 @@ class MyExtensionProvidedHttpRequestEditor implements ExtensionProvidedHttpReque
 						request = requestResponse.request().withBody(requestBody);
 					}
 				} else if ( requestResponse.url().equalsIgnoreCase(settingForm.authenticationURL)) {
-					Pattern patternClientDataJSON = Pattern.compile(settingForm.authenticationRegexClientDataJSON);
-					Matcher matcherClientDataJSON = patternClientDataJSON.matcher(requestBody);
-
-					Pattern patternAuthenticatorData = Pattern.compile(settingForm.authenticationRegexAuthenticatorData);
-					Matcher matcherAuthenticatorData = patternAuthenticatorData.matcher(requestBody);
-
-					Pattern patternSignature = Pattern.compile(settingForm.authenticationRegexSignature);
-					Matcher matcherSignature = patternSignature.matcher(requestBody);
+					Matcher matcherClientDataJSON = settingForm.authenticationCompiledRegexClientDataJSON.matcher(requestBody);
+					Matcher matcherAuthenticatorData = settingForm.authenticationCompiledRegexAuthenticatorData.matcher(requestBody);
+					Matcher matcherSignature = settingForm.authenticationCompiledRegexSignature.matcher(requestBody);
 
 					if (matcherClientDataJSON.find() && matcherAuthenticatorData.find() && matcherSignature.find()) {
 						String clientDataJSONValue = matcherClientDataJSON.group(1);
@@ -182,11 +174,8 @@ class MyExtensionProvidedHttpRequestEditor implements ExtensionProvidedHttpReque
 			this.requestEditor.setContents(ByteArray.byteArray());
 
 			if (requestResponse.url().equalsIgnoreCase(settingForm.registrationURL)) {
-				Pattern patternClientDataJSON = Pattern.compile(settingForm.registrationRegexClientDataJSON);
-				Matcher matcherClientDataJSON = patternClientDataJSON.matcher(requestBody);
-
-				Pattern patternAttestationObject = Pattern.compile(settingForm.registrationRegexAttestationObject);
-				Matcher matcherAttestationObject = patternAttestationObject.matcher(requestBody);
+				Matcher matcherClientDataJSON = settingForm.registrationCompiledRegexClientDataJSON.matcher(requestBody);
+				Matcher matcherAttestationObject = settingForm.registrationCompiledRegexAttestationObject.matcher(requestBody);
 
 				if (matcherClientDataJSON.find() && matcherAttestationObject.find()) {
 					String clientDataJSONValue = matcherClientDataJSON.group(1);
@@ -206,11 +195,8 @@ class MyExtensionProvidedHttpRequestEditor implements ExtensionProvidedHttpReque
 					this.requestEditor.setContents(byteArray(outputJsonString));
 				}
 			} else if (requestResponse.url().equalsIgnoreCase(settingForm.authenticationURL)) {
-				Pattern patternClientDataJSON = Pattern.compile(settingForm.authenticationRegexClientDataJSON);
-				Matcher matcherClientDataJSON = patternClientDataJSON.matcher(requestBody);
-
-				Pattern patternAuthenticatorData = Pattern.compile(settingForm.authenticationRegexAuthenticatorData);
-				Matcher matcherAuthenticatorData = patternAuthenticatorData.matcher(requestBody);
+				Matcher matcherClientDataJSON = settingForm.authenticationCompiledRegexClientDataJSON.matcher(requestBody);
+				Matcher matcherAuthenticatorData = settingForm.authenticationCompiledRegexAuthenticatorData.matcher(requestBody);
 
 				if (matcherClientDataJSON.find() && matcherAuthenticatorData.find()) {
 					String clientDataJSONValue = matcherClientDataJSON.group(1);
@@ -255,22 +241,14 @@ class MyExtensionProvidedHttpRequestEditor implements ExtensionProvidedHttpReque
 					url = "";
 				}
 				if (url.equalsIgnoreCase(settingForm.registrationURL)) {
-					Pattern patternClientDataJSON = Pattern.compile(settingForm.registrationRegexClientDataJSON);
-					Matcher matcherClientDataJSON = patternClientDataJSON.matcher(requestBody);
-
-					Pattern patternAttestationObject = Pattern.compile(settingForm.registrationRegexAttestationObject);
-					Matcher matcherAttestationObject = patternAttestationObject.matcher(requestBody);
+					Matcher matcherClientDataJSON = settingForm.registrationCompiledRegexClientDataJSON.matcher(requestBody);
+					Matcher matcherAttestationObject = settingForm.registrationCompiledRegexAttestationObject.matcher(requestBody);
 
 					return matcherClientDataJSON.find() && matcherAttestationObject.find();
 				} else if (url.equalsIgnoreCase(settingForm.authenticationURL)) {
-					Pattern patternClientDataJSON = Pattern.compile(settingForm.authenticationRegexClientDataJSON);
-					Matcher matcherClientDataJSON = patternClientDataJSON.matcher(requestBody);
-
-					Pattern patternAuthenticatorData = Pattern.compile(settingForm.authenticationRegexAuthenticatorData);
-					Matcher matcherAuthenticatorData = patternAuthenticatorData.matcher(requestBody);
-
-					Pattern patternSignature = Pattern.compile(settingForm.authenticationRegexSignature);
-					Matcher matcherSignature = patternSignature.matcher(requestBody);
+					Matcher matcherClientDataJSON = settingForm.authenticationCompiledRegexClientDataJSON.matcher(requestBody);
+					Matcher matcherAuthenticatorData = settingForm.authenticationCompiledRegexAuthenticatorData.matcher(requestBody);
+					Matcher matcherSignature = settingForm.authenticationCompiledRegexSignature.matcher(requestBody);
 
 					return matcherClientDataJSON.find() && matcherAuthenticatorData.find() && matcherSignature.find();
 				}

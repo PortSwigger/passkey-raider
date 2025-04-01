@@ -53,8 +53,7 @@ class MyProxyHttpRequestHandler implements ProxyRequestHandler {
 				*/
 				String requestBody = interceptedRequest.bodyToString();
 
-				Pattern patternAttestationObject = Pattern.compile(settingForm.registrationRegexAttestationObject);
-				Matcher matcherAttestationObject = patternAttestationObject.matcher(requestBody);
+				Matcher matcherAttestationObject = settingForm.registrationCompiledRegexAttestationObject.matcher(requestBody);
 
 				if (matcherAttestationObject.find()) {
 					String attestationObjectValue = matcherAttestationObject.group(1);
@@ -100,14 +99,9 @@ class MyProxyHttpRequestHandler implements ProxyRequestHandler {
 			if (interceptedRequest.url().equalsIgnoreCase(settingForm.authenticationURL)) {
 				String requestBody = interceptedRequest.bodyToString();
 
-				Pattern patternClientDataJSON = Pattern.compile(settingForm.authenticationRegexClientDataJSON);
-				Matcher matcherClientDataJSON = patternClientDataJSON.matcher(requestBody);
-
-				Pattern patternAuthenticatorData = Pattern.compile(settingForm.authenticationRegexAuthenticatorData);
-				Matcher matcherAuthenticatorData = patternAuthenticatorData.matcher(requestBody);
-
-				Pattern patternSignature = Pattern.compile(settingForm.authenticationRegexSignature);
-				Matcher matcherSignature = patternSignature.matcher(requestBody);
+				Matcher matcherClientDataJSON = settingForm.authenticationCompiledRegexClientDataJSON.matcher(requestBody);
+				Matcher matcherAuthenticatorData = settingForm.authenticationCompiledRegexAuthenticatorData.matcher(requestBody);
+				Matcher matcherSignature = settingForm.authenticationCompiledRegexSignature.matcher(requestBody);
 
 				if (matcherClientDataJSON.find() && matcherAuthenticatorData.find() && matcherSignature.find()) {
 					String clientDataJSONValue = matcherClientDataJSON.group(1);

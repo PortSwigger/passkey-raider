@@ -21,6 +21,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.lang.reflect.Type;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 public class SettingForm {
 	private JPanel mainPanel;
@@ -71,17 +72,22 @@ public class SettingForm {
 	private final PersistedObject settingData;
 
 	public String registrationURL = "";
-	public String registrationRegexClientDataJSON = "\"clientDataJSON\":\"([^\"]+)";
-	public String registrationRegexAttestationObject = "\"attestationObject\":\"([^\"]+)";
+	private String registrationRegexClientDataJSON = "\"clientDataJSON\":\"([^\"]+)";
+	private String registrationRegexAttestationObject = "\"attestationObject\":\"([^\"]+)";
+	public Pattern registrationCompiledRegexClientDataJSON;
+	public Pattern registrationCompiledRegexAttestationObject;
 	public boolean isRegisterClientDataJsonURLEncoded = false;
 	public boolean isRegisterAttestationObjectURLEncoded = false;
 	public boolean isRegisterClientDataJsonBase64URL = true;
 	public boolean isRegisterAttestationObjectBase64URL = true;
 
 	public String authenticationURL = "";
-	public String authenticationRegexClientDataJSON = "\"clientDataJSON\":\"([^\"]+)";
-	public String authenticationRegexAuthenticatorData = "\"authenticatorData\":\"([^\"]+)";
-	public String authenticationRegexSignature = "\"signature\":\"([^\"]+)";
+	private String authenticationRegexClientDataJSON = "\"clientDataJSON\":\"([^\"]+)";
+	private String authenticationRegexAuthenticatorData = "\"authenticatorData\":\"([^\"]+)";
+	private String authenticationRegexSignature = "\"signature\":\"([^\"]+)";
+	public Pattern authenticationCompiledRegexClientDataJSON;
+	public Pattern authenticationCompiledRegexAuthenticatorData;
+	public Pattern authenticationCompiledRegexSignature;
 	public boolean isAuthenClientDataJsonURLEncoded = false;
 	public boolean isAuthenAuthenticatorDataURLEncoded = false;
 	public boolean isAuthenSignatureURLEncoded = false;
@@ -106,6 +112,9 @@ public class SettingForm {
 		registrationRegexClientDataJSON = settingData.getString("registrationClientDataJSON") != null ? settingData.getString("registrationClientDataJSON") : registrationRegexClientDataJSON;
 		registrationRegexAttestationObject = settingData.getString("registrationAttestationObject") != null ? settingData.getString("registrationAttestationObject") : registrationRegexAttestationObject;
 
+		registrationCompiledRegexClientDataJSON = Pattern.compile(registrationRegexClientDataJSON);
+		registrationCompiledRegexAttestationObject = Pattern.compile(registrationRegexAttestationObject);
+
 		isRegisterClientDataJsonURLEncoded = settingData.getBoolean("isRegisterClientDataJsonURLEncoded") != null ? settingData.getBoolean("isRegisterClientDataJsonURLEncoded") : isRegisterClientDataJsonURLEncoded;
 		isRegisterAttestationObjectURLEncoded = settingData.getBoolean("isRegisterAttestationObjectURLEncoded") != null ? settingData.getBoolean("isRegisterAttestationObjectURLEncoded") : isRegisterAttestationObjectURLEncoded;
 		isRegisterClientDataJsonBase64URL = settingData.getBoolean("isRegisterClientDataJsonBase64URL") != null ? settingData.getBoolean("isRegisterClientDataJsonBase64URL") : isRegisterClientDataJsonBase64URL;
@@ -115,6 +124,10 @@ public class SettingForm {
 		authenticationRegexClientDataJSON = settingData.getString("authenticationClientDataJSON") != null ? settingData.getString("authenticationClientDataJSON") : authenticationRegexClientDataJSON;
 		authenticationRegexAuthenticatorData = settingData.getString("authenticationAuthenticatorData") != null ? settingData.getString("authenticationAuthenticatorData") : authenticationRegexAuthenticatorData;
 		authenticationRegexSignature = settingData.getString("authenticationSignature") != null ? settingData.getString("authenticationSignature") : authenticationRegexSignature;
+
+		authenticationCompiledRegexClientDataJSON = Pattern.compile(authenticationRegexClientDataJSON);
+		authenticationCompiledRegexAuthenticatorData = Pattern.compile(authenticationRegexAuthenticatorData);
+		authenticationCompiledRegexSignature = Pattern.compile(authenticationRegexSignature);
 
 		isAuthenClientDataJsonURLEncoded = settingData.getBoolean("isAuthenClientDataJsonURLEncoded") != null ? settingData.getBoolean("isAuthenClientDataJsonURLEncoded") : isAuthenClientDataJsonURLEncoded;
 		isAuthenAuthenticatorDataURLEncoded = settingData.getBoolean("isAuthenAuthenticatorDataURLEncoded") != null ? settingData.getBoolean("isAuthenAuthenticatorDataURLEncoded") : isAuthenAuthenticatorDataURLEncoded;
@@ -185,6 +198,9 @@ public class SettingForm {
 			registrationRegexClientDataJSON = registrationClientDataJSONField.getText().trim();
 			registrationRegexAttestationObject = registrationAttestationObjectField.getText().trim();
 
+			registrationCompiledRegexClientDataJSON = Pattern.compile(registrationRegexClientDataJSON);
+			registrationCompiledRegexAttestationObject = Pattern.compile(registrationRegexAttestationObject);
+
 			isRegisterClientDataJsonURLEncoded = registerClientDataJsonEncodedChkbox.isSelected();
 			isRegisterAttestationObjectURLEncoded = registerAttestationObjectEncodedChkbox.isSelected();
 			isRegisterClientDataJsonBase64URL = registerClientDataJsonBase64URLRadBtn.isSelected();
@@ -194,6 +210,10 @@ public class SettingForm {
 			authenticationRegexClientDataJSON = authenticationClientDataJSONField.getText().trim();
 			authenticationRegexAuthenticatorData = authenticationAuthenticatorDataField.getText().trim();
 			authenticationRegexSignature = authenticationSignatureField.getText().trim();
+
+			authenticationCompiledRegexClientDataJSON = Pattern.compile(authenticationRegexClientDataJSON);
+			authenticationCompiledRegexAuthenticatorData = Pattern.compile(authenticationRegexAuthenticatorData);
+			authenticationCompiledRegexSignature = Pattern.compile(authenticationRegexSignature);
 
 			isAuthenClientDataJsonURLEncoded = authenClientDataJsonEncodedChkbox.isSelected();
 			isAuthenAuthenticatorDataURLEncoded = authenAuthenticatorDataEncodedChkbox.isSelected();
