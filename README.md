@@ -46,7 +46,7 @@ The recommended and easiest method is via Burp Suite's BApp Store. Refer to the 
 ### Manual Installation
 
 1. Download the latest release:
-[Passkey-Raider-1.0.1.jar](https://github.com/siamthanathack/Passkey-Raider/releases/download/v1.0.1/Passkey-Raider-1.0.1.jar).
+[Passkey-Raider-1.0.2.jar](https://github.com/siamthanathack/Passkey-Raider/releases/download/v1.0.2/Passkey-Raider-1.0.2.jar).
 2. Open Burp Suite, navigate to `Extensions` > `Add`, and load the JAR file.
 
 ## Building from Source
@@ -72,7 +72,7 @@ Passkey Raider can be built from source using [IntelliJ IDEA](https://www.jetbra
 
    * Navigate to `Build` > `Build Project`.
    * Run the `shadowJar` task in the Gradle tool window on right hand side of the IntelliJ IDEA.
-4. The JAR file (`Passkey-Raider-1.0.1.jar`) will be generated in the `build/libs` directory.
+4. The JAR file (`Passkey-Raider-1.0.2.jar`) will be generated in the `build/libs` directory.
 
 ## Usage
 
