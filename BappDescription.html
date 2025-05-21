@@ -1,0 +1,29 @@
+Passkey Raider is a Burp Suite extension specifically designed to facilitate thorough testing of Passkey systems. It provides three key functionalities, including Decoding and Encoding Passkey data in HTTP requests, Automatically replacing the public key in Passkey registration flows with a generated public key, and Automatically signing data in Passkey authentication flows using a generated private key.
+
+<h2>Features</h2>
+
+* <strong>Regex Support:</strong> Extract Passkey components (clientDataJSON, attestationObject, authenticatorData, and signature) from HTTP requests.
+* <strong>Encoding Support:</strong> Handling multiple formats: URL-encoded, Base64, and Base64URL.
+* <strong>Passkey Data Type Support:</strong> Supporting several types including clientDataJSON, AttestationObject, authenticatorData, Attestation Statement (None, AndroidKey, AndroidSafetyNet, AppleAnonymous, FIDOU2F, Packed, TPM).
+* <strong>Key Pair Generation:</strong> Generate key pairs using various algorithms like RS256, ES256, RS1, EdDSA, RS384, RS512, ES384, and ES512.
+* <strong>Automation</strong>: Automatic replacement of a public key during Passkey registration flows and automatic signing of data in Passkey authentication flows.
+* <strong>Project Integration:</strong> You can save and load settings directly into the Burp Suite project file.
+* <strong>Request Highlighting:</strong> Identifies and highlights Passkey registration and authentication requests in Burp Suites Proxy tool.
+
+<h2>Usage</h2>
+
+Passkey Raider has two main components: Settings Page and Passkey Message Editor.
+
+<strong>Setting Page:</strong>
+
+Before conducting Passkey testing, you can configure Passkey settings such as URLs, regex patterns for extracting data, and generating key pairs. This involves several parameters:
+
+* URLs of Passkey registration and authentication requests.
+* Regex patterns for extracting Passkey data from HTTP requests.
+* Selection if the data is URL-encoded or in Base64 (standard) format or Base64 (URL-safe standard) format.
+* Generated COSE Key - A generated key pair used on Passkey registration and authentication flows. This key pair can be edited or imported from other Burp Suite projects.
+* Algorithm for generating key pair. It is recommended to select an algorithm that the target web supports.
+
+<strong>Passkey Message Editor:</strong>
+
+This allows you to view and edit decoded Passkey data directly within HTTP requests.

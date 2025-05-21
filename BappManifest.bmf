@@ -1,0 +1,13 @@
+Uuid: 1f55724594064b29bc18e0fbcda8de1b
+ExtensionType: 1
+Name: Passkey Raider
+RepoName: passkey-raider
+ScreenVersion: 1.0.2
+SerialVersion: 1
+MinPlatformVersion: 0
+ProOnly: False
+Author: PortSwigger
+ShortDescription: This extension allows comprehensive testing of Passkey systems, with features for decoding and encoding Passkey data in HTTP requests and automatically replacing or signing data using generated keys.
+EntryPoint: ./Passkey-Raider-1.0.2.jar
+BuildCommand: ./gradlew jar
+SupportedProducts: Pro, Community
