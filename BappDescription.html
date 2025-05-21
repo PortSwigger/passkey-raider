@@ -1,29 +1,43 @@
-Passkey Raider is a Burp Suite extension specifically designed to facilitate thorough testing of Passkey systems. It provides three key functionalities, including Decoding and Encoding Passkey data in HTTP requests, Automatically replacing the public key in Passkey registration flows with a generated public key, and Automatically signing data in Passkey authentication flows using a generated private key.
+<p>Passkey Raider is a Burp Suite extension designed to facilitate comprehensive testing of Passkey systems. It offers three core functionalities:</p>
+<ul>
+  <li>Decode and encode Passkey data in HTTP requests.</li>
+  <li>Automatically replace the public key in Passkey registration flows with a generated public key.</li>
+  <li>Automatically sign data in Passkey authentication flows using a generated private key.</li>
+</ul>
 
 <h2>Features</h2>
-
-* <strong>Regex Support:</strong> Extract Passkey components (clientDataJSON, attestationObject, authenticatorData, and signature) from HTTP requests.
-* <strong>Encoding Support:</strong> Handling multiple formats: URL-encoded, Base64, and Base64URL.
-* <strong>Passkey Data Type Support:</strong> Supporting several types including clientDataJSON, AttestationObject, authenticatorData, Attestation Statement (None, AndroidKey, AndroidSafetyNet, AppleAnonymous, FIDOU2F, Packed, TPM).
-* <strong>Key Pair Generation:</strong> Generate key pairs using various algorithms like RS256, ES256, RS1, EdDSA, RS384, RS512, ES384, and ES512.
-* <strong>Automation</strong>: Automatic replacement of a public key during Passkey registration flows and automatic signing of data in Passkey authentication flows.
-* <strong>Project Integration:</strong> You can save and load settings directly into the Burp Suite project file.
-* <strong>Request Highlighting:</strong> Identifies and highlights Passkey registration and authentication requests in Burp Suites Proxy tool.
+<ul>
+  <li><strong>Extract Passkey Data:</strong> Seamlessly capture key Passkey components like clientDataJSON and signature.</li>
+  <li><strong>Flexible Encoding:</strong> Support for URL-encoded, Base64, and Base64URL formats.</li>
+  <li><strong>Comprehensive Data Types:</strong> Handle clientDataJSON, attestationObject, authenticatorData, and various attestation statements.</li>
+  <li><strong>Key Pair Generation:</strong> Generate secure key pairs with multiple algorithms (RS256, ES256, EdDSA, and more).</li>
+  <li><strong>Automated Testing:</strong> Auto-replace public keys and sign data in real-time during Passkey flows.</li>
+  <li><strong>Project Integration:</strong> Save and load settings directly into Burp Suite project files.</li>
+  <li><strong>Instant Request Highlighting:</strong> Automatically identify and highlight Passkey-related requests in Burp Suite's Proxy tool.</li>
+</ul>
 
 <h2>Usage</h2>
+<p>Passkey Raider includes two main components: Settings Page and Passkey Message Editor.</p>
 
-Passkey Raider has two main components: Settings Page and Passkey Message Editor.
+<h3>Settings Page</h3>
+<p>Configure Passkey settings such as URLs, regex patterns for extracting data, and generating key pairs before Passkey testing.</p>
+<ul>
+  <li><strong>URLs:</strong> URLs of Passkey registration and authentication requests.</li>
+  <li><strong>Regex:</strong> Regex patterns for extracting Passkey data from HTTP requests. Grouping in Regex (subpattern enclosed within parentheses) is required, as the extension will use the matched data in the group.</li>
+  <li><strong>Encoding Formats:</strong> Select the encoding format for data:
+    <ul>
+      <li><strong>URL Encoded:</strong> Check this box if data is URL encoded.</li>
+      <li><strong>Base64:</strong> Select this option if data is in standard Base64 format.</li>
+      <li><strong>Base64URL:</strong> Select this option if data is in Base64 URL-safe format.</li>
+    </ul>
+  </li>
+  <li><strong>Generated COSE Key:</strong> Generate or import a key pair for use in Passkey registration and authentication flows.</li>
+  <li><strong>Algorithm:</strong> Choose an algorithm for generating the key pair. It is recommended to select an algorithm supported by the target web service.</li>
+</ul>
 
-<strong>Setting Page:</strong>
-
-Before conducting Passkey testing, you can configure Passkey settings such as URLs, regex patterns for extracting data, and generating key pairs. This involves several parameters:
-
-* URLs of Passkey registration and authentication requests.
-* Regex patterns for extracting Passkey data from HTTP requests.
-* Selection if the data is URL-encoded or in Base64 (standard) format or Base64 (URL-safe standard) format.
-* Generated COSE Key - A generated key pair used on Passkey registration and authentication flows. This key pair can be edited or imported from other Burp Suite projects.
-* Algorithm for generating key pair. It is recommended to select an algorithm that the target web supports.
-
-<strong>Passkey Message Editor:</strong>
-
-This allows you to view and edit decoded Passkey data directly within HTTP requests.
+<h3>Passkey Message Editor</h3>
+<p>View and edit decoded Passkey data directly within HTTP requests.</p>
+<ul>
+  <li><strong>Passkey Registration Request:</strong> View decoded registration data.</li>
+  <li><strong>Passkey Authentication Request:</strong> View decoded authentication data.</li>
+</ul>
