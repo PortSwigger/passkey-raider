@@ -9,5 +9,5 @@ ProOnly: False
 Author: Peeranat Thantaletong, Siam Thanat Hack
 ShortDescription: Facilitates comprehensive testing of Passkey systems.
 EntryPoint: Passkey-Raider-1.0.2.jar
-BuildCommand: ./gradlew jar
+BuildCommand: ./gradlew build
 SupportedProducts: Pro, Community
