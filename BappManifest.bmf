@@ -3,7 +3,7 @@ ExtensionType: 1
 Name: Passkey Raider
 RepoName: passkey-raider
 ScreenVersion: 1.0.2
-SerialVersion: 2
+SerialVersion: 3
 MinPlatformVersion: 8
 ProOnly: False
 Author: Peeranat Thantaletong, Siam Thanat Hack
